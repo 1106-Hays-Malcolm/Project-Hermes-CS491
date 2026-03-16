@@ -4,6 +4,7 @@ from pathlib import Path
 import re
 from os import listdir
 from time import sleep
+import json
 
 # URLs and directories
 ROOT_URL = "https://bg3.wiki/wiki"
@@ -14,6 +15,14 @@ QUESTS_DIRECTORY = DATA_DIRECTORY + "/json"
 # CSS class names for BeautifulSoup
 QUEST_CLASS_NAME = "bg3wiki-imagetext"
 QUEST_TEXT_CLASS_NAME = "bg3wiki-imagetext-text"
+QUEST_OBJECTIVE_CLASSES = [
+    "toccolours",
+    "mw-collapsible",
+    "mw-collapsed",
+    "mw-made-collapsible"
+]
+QUEST_OBJECTIVE_TITLE_STYLE = "font-weight: bold; line-height: 1.6;"
+QUEST_OBJECTIVE_LIST_CLASS = "mw-collapsible-content"
 
 # To avoid downloading the wiki a lot of times
 USE_DOWNLOADED_HTML = True
@@ -61,11 +70,42 @@ def get_html(path, excluded_paths=[]):
     return raw_html
 
 
+def parse_quest(html):
+    soup = BeautifulSoup(html, "html.parser")
+    parsed_quest = {}
+
+    objectives = soup.find_all(True, {"class": QUEST_OBJECTIVE_CLASSES})
+    for objective in objectives:
+        title_html = objective.find("div", attrs={"style": QUEST_OBJECTIVE_TITLE_STYLE})
+        objective_list_html = objective.find("div", class_=QUEST_OBJECTIVE_LIST_CLASS)
+
+        if objective == -1 or title_html is None or objective_list_html is None:
+            continue
+
+        title = title_html.text.strip()
+        objective_list = objective_list_html.find("ul")
+        objective_list_cleaned = []
+
+        if objective_list is None:
+            one_objective = objective.find("p")
+            if one_objective is not None:
+                objective_list_cleaned.append(one_objective.text.strip())
+        else:
+            for item in objective_list:
+                item = item.text.strip()
+                if item != '':
+                    objective_list_cleaned.append(item)
+
+        print(title)
+        print(objective_list_cleaned)
+        print()
+
 def main():
     # Create directories to store scraped data if they do not exist
     for p in [DATA_DIRECTORY, QUESTS_DIRECTORY, HTML_DIRECTORY]:
         Path(p).mkdir(parents=True, exist_ok=True)
 
+    # The page that lists all of the quests with links
     page = get_html("/Quests")
 
     soup = BeautifulSoup(page, "html.parser")
@@ -74,6 +114,7 @@ def main():
     # for name in filenames:
     #     print(name)
 
+    # Counter for downloads
     num_downloaded = 0
     num_skipped = 0
 
@@ -89,12 +130,14 @@ def main():
         title_link_url = title_link["href"]
         title_link_url_fixed = "/" + re.sub(r"/.*/", "", title_link_url)
 
+        # Count the files downloaded and skipped
         if not SKIP_DOWNLOADED_FILES or title_link_url_fixed not in filenames:
             num_downloaded += 1
         else:
             num_skipped += 1
 
-        get_html(title_link_url_fixed, filenames)
+        quest_html = get_html(title_link_url_fixed, filenames)
+        parse_quest(quest_html)
 
     print("\n" + "=" * 50 + "\n")
     print("Total number of downloaded files: " + str(num_downloaded))
