@@ -174,13 +174,7 @@ def parse_walkthrough(soup):
 
         next_tag = next_tag.next_sibling
 
-    print()
-    print(parsed_walkthrough)
-    print()
-
-    # print()
-    # print(walkthrough_headings)
-    # print()
+    return parsed_walkthrough
 
 
 def main():
@@ -224,15 +218,14 @@ def main():
         parsed_quests[title_link_text] = {}
         quest_soup = BeautifulSoup(quest_html, "html.parser")
         parsed_quests[title_link_text]["Objectives"] = parse_quest_objectives(quest_soup)
-        print(title_link_text)
-        parse_walkthrough(quest_soup)
+        parsed_quests[title_link_text]["Walkthrough"] = parse_walkthrough(quest_soup)
 
     print("\n" + "=" * 50 + "\n")
     print("Total number of downloaded files: " + str(num_downloaded))
     print("Total number of files skipped for download: " + str(num_skipped))
 
-    # with open(JSON_DIRECTORY + JSON_FILENAME, "w") as json_file:
-    #     json_file.write(json.dumps(parsed_quests, indent=4))
+    with open(JSON_DIRECTORY + JSON_FILENAME, "w") as json_file:
+        json_file.write(json.dumps(parsed_quests, indent=4))
 
 if __name__ == "__main__":
     main()
