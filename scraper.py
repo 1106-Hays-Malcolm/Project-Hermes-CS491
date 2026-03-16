@@ -1,6 +1,7 @@
 import requests
 from bs4 import BeautifulSoup
 from pathlib import Path
+import re
 
 # URLs and directories
 ROOT_URL = "https://bg3.wiki/wiki"
@@ -13,7 +14,7 @@ QUEST_CLASS_NAME = "bg3wiki-imagetext"
 QUEST_TEXT_CLASS_NAME = "bg3wiki-imagetext-text"
 
 # To avoid downloading the wiki a lot of times
-USE_DOWNLOADED_HTML = True
+USE_DOWNLOADED_HTML = False
 
 
 def get_html(path):
@@ -47,6 +48,9 @@ def main():
 
         title_link_text = title_link.text.strip()
         title_link_url = title_link["href"]
+        title_link_url_fixed = "/" + re.sub(r"/.*/", "", title_link_url)
+
+        get_html(title_link_url_fixed)
 
 
 if __name__ == "__main__":
