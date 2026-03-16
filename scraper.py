@@ -110,7 +110,7 @@ def parse_quest_objectives(soup):
 
 
 def parse_walkthrough(soup):
-    parsed_walkthrough = []
+    parsed_walkthrough = ""
 
     def is_walkthrough_step_heading(tag):
         try:
@@ -122,9 +122,10 @@ def parse_walkthrough(soup):
         except AttributeError:
             return False
 
-    def is_major_section_heading(tag):
+    def is_end_of_walkthrough(tag):
         try:
-            return tag.get("id") in QUEST_HEADINGS
+            return tag.get("id") in QUEST_HEADINGS or \
+                    tag.get("role") == "navigation"
         except AttributeError:
             return False
 
@@ -134,17 +135,33 @@ def parse_walkthrough(soup):
         except AttributeError:
             return False
 
-    walkthrough_headings = soup.find_all(is_walkthrough_step_heading)
+    def ignore(tag):
+        try:
+            return tag.name not in [
+                        "figcaption",
+                        "figure",
+                        "h3",
+                        "h2",
+                    ]
+        except AttributeError:
+            return False
 
-    # Some walkthroughs have no headings in the instructions
-    if (walkthrough_headings == []):
-        inner_text = ""
-        next_sibling = soup.find(id="Walkthrough").parent.next_sibling
-        while next_sibling is not None and not is_major_section_heading(next_sibling):
-            inner_text += next_sibling.get_text()
-            next_sibling = next_sibling.next_sibling
-        parsed_walkthrough.append(["", inner_text])
-        print(inner_text)
+    walkthrough_section_heading = soup.find(is_walkthrough_heading)
+
+    if walkthrough_section_heading is None:
+        return []
+
+    next_tag = walkthrough_section_heading.parent.next_sibling
+    while next_tag is not None and not is_end_of_walkthrough(next_tag):
+        if ignore(next_tag):
+            next_tag = next_tag.next_sibling
+            continue
+        parsed_walkthrough += next_tag.get_text().strip()
+        next_tag = next_tag.next_sibling
+
+    print()
+    print(parsed_walkthrough)
+    print()
 
     # print()
     # print(walkthrough_headings)
