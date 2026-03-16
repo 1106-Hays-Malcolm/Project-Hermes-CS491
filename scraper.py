@@ -53,8 +53,11 @@ def main():
     soup = BeautifulSoup(page, "html.parser")
 
     filenames = get_all_downloaded_filenames(HTML_DIRECTORY)
-    for name in filenames:
-        print(name)
+    # for name in filenames:
+    #     print(name)
+
+    num_downloaded = 0
+    num_skipped = 0
 
     quests = soup.find_all(class_=QUEST_CLASS_NAME)
     for quest in quests:
@@ -67,7 +70,15 @@ def main():
         title_link_url = title_link["href"]
         title_link_url_fixed = "/" + re.sub(r"/.*/", "", title_link_url)
 
+
+        if title_link_url_fixed in filenames:
+            num_downloaded += 1
+        else:
+            num_skipped += 1
         # get_html(title_link_url_fixed)
+
+    print("Total number of downloaded files: " + str(num_downloaded))
+    print("Total number of files skipped for download: " + str(num_skipped))
 
 
 if __name__ == "__main__":
