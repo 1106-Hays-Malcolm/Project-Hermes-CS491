@@ -21,6 +21,7 @@ def get_html(path):
         with open(HTML_DIRECTORY + path + ".html", "rb") as file:
             raw_html = file.read()
     else:
+        print("Now downloading: " + path)
         raw_html = requests.get(ROOT_URL + path).content
         with open(HTML_DIRECTORY + path + ".html", "wb+") as file:
             file.write(raw_html)
@@ -33,19 +34,9 @@ def main():
     for p in [DATA_DIRECTORY, QUESTS_DIRECTORY, HTML_DIRECTORY]:
         Path(p).mkdir(parents=True, exist_ok=True)
 
-    PATH = "/Quests"
-    if USE_DOWNLOADED_HTML:
-        with open(HTML_DIRECTORY + PATH + ".html", "rb") as file:
-            downloaded_page = file.read()
-    else:
-        page = requests.get(ROOT_URL + PATH)
-        with open(HTML_DIRECTORY + PATH + ".html", "wb+") as file:
-            file.write(page.content)
+    page = get_html("/Quests")
 
-    if USE_DOWNLOADED_HTML:
-        soup = BeautifulSoup(downloaded_page, "html.parser")
-    else:
-        soup = BeautifulSoup(page.content, "html.parser")
+    soup = BeautifulSoup(page, "html.parser")
 
     quests = soup.find_all(class_=QUEST_CLASS_NAME)
     for quest in quests:
