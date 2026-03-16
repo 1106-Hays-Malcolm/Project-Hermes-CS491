@@ -32,6 +32,7 @@ QUEST_HEADINGS = [
     "Notes",
     "Achievements"
 ]
+EDIT_BUTTON_CLASS = "mw-editsection"
 
 # To avoid downloading the wiki a lot of times
 USE_DOWNLOADED_HTML = True
@@ -114,11 +115,16 @@ def parse_walkthrough(soup):
 
     def is_walkthrough_step_heading(tag):
         try:
-            return (tag.parent.name == "h3" or tag.parent.name == "h2") and \
-                    tag.has_attr("class") and \
-                    tag.name == "span" and \
-                    QUEST_WALKTHROUGH_SECTION_CLASS in tag.get("class") and \
-                    tag.get("id") not in QUEST_HEADINGS
+            return tag.find(is_main_heading_span) is not None
+        except AttributeError:
+            return False
+
+    def is_main_heading_span(tag):
+        try:
+            return tag.has_attr("id") and \
+                    tag.get("id") in QUEST_HEADINGS and \
+                    tag.get("name") == "span"
+
         except AttributeError:
             return False
 
@@ -137,14 +143,18 @@ def parse_walkthrough(soup):
 
     def ignore(tag):
         try:
-            return tag.name not in [
+            return tag.name in [
                         "figcaption",
                         "figure",
                         "h3",
                         "h2",
+                        "style"
                     ]
         except AttributeError:
             return False
+
+    for edit_section in soup.find_all(class_=EDIT_BUTTON_CLASS):
+        edit_section.decompose()
 
     walkthrough_section_heading = soup.find(is_walkthrough_heading)
 
@@ -156,7 +166,12 @@ def parse_walkthrough(soup):
         if ignore(next_tag):
             next_tag = next_tag.next_sibling
             continue
-        parsed_walkthrough += next_tag.get_text().strip()
+        section_text = next_tag.get_text().strip()
+        if section_text != "":
+            if parsed_walkthrough != "":
+                parsed_walkthrough += "\n"
+            parsed_walkthrough += next_tag.get_text().strip()
+
         next_tag = next_tag.next_sibling
 
     print()
