@@ -24,6 +24,14 @@ QUEST_OBJECTIVE_CLASSES = [
 ]
 QUEST_OBJECTIVE_TITLE_STYLE = "font-weight: bold; line-height: 1.6;"
 QUEST_OBJECTIVE_LIST_CLASS = "mw-collapsible-content"
+QUEST_WALKTHROUGH_SECTION_CLASS = "mw-headline"
+QUEST_HEADINGS = [
+    "Objectives",
+    "Walkthrough",
+    "Quest_Rewards",
+    "Notes",
+    "Achievements"
+]
 
 # To avoid downloading the wiki a lot of times
 USE_DOWNLOADED_HTML = True
@@ -71,8 +79,7 @@ def get_html(path, excluded_paths=[]):
     return raw_html
 
 
-def parse_quest_objectives(html):
-    soup = BeautifulSoup(html, "html.parser")
+def parse_quest_objectives(soup):
     parsed_objectives = {}
 
     objectives = soup.find_all(True, {"class": QUEST_OBJECTIVE_CLASSES})
@@ -102,6 +109,48 @@ def parse_quest_objectives(html):
     return parsed_objectives
 
 
+def parse_walkthrough(soup):
+    parsed_walkthrough = []
+
+    def is_walkthrough_step_heading(tag):
+        try:
+            return (tag.parent.name == "h3" or tag.parent.name == "h2") and \
+                    tag.has_attr("class") and \
+                    tag.name == "span" and \
+                    QUEST_WALKTHROUGH_SECTION_CLASS in tag.get("class") and \
+                    tag.get("id") not in QUEST_HEADINGS
+        except AttributeError:
+            return False
+
+    def is_major_section_heading(tag):
+        try:
+            return tag.get("id") in QUEST_HEADINGS
+        except AttributeError:
+            return False
+
+    def is_walkthrough_heading(tag):
+        try:
+            return tag.get("id") == "Walkthrough"
+        except AttributeError:
+            return False
+
+    walkthrough_headings = soup.find_all(is_walkthrough_step_heading)
+
+    # Some walkthroughs have no headings in the instructions
+    if (walkthrough_headings == []):
+        inner_text = ""
+        next_sibling = soup.find(id="Walkthrough").parent.next_sibling
+        while next_sibling is not None and not is_major_section_heading(next_sibling):
+            inner_text += next_sibling.get_text()
+            next_sibling = next_sibling.next_sibling
+        parsed_walkthrough.append(["", inner_text])
+        print(inner_text)
+
+    # print()
+    # print(walkthrough_headings)
+    # print()
+
+
 def main():
     # Create directories to store scraped data if they do not exist
     for p in [DATA_DIRECTORY, JSON_DIRECTORY, HTML_DIRECTORY]:
@@ -122,7 +171,6 @@ def main():
 
     quests = soup.find_all(class_=QUEST_CLASS_NAME)
     parsed_quests = {}
-    parsed_objectives = {}
     for quest in quests:
         quest_text = quest.find(class_=QUEST_TEXT_CLASS_NAME)
         title_link = quest_text.find("a")
@@ -142,14 +190,17 @@ def main():
 
         quest_html = get_html(title_link_url_fixed, filenames)
         parsed_quests[title_link_text] = {}
-        parsed_quests[title_link_text]["Objectives"] = parse_quest_objectives(quest_html)
+        quest_soup = BeautifulSoup(quest_html, "html.parser")
+        parsed_quests[title_link_text]["Objectives"] = parse_quest_objectives(quest_soup)
+        print(title_link_text)
+        parse_walkthrough(quest_soup)
 
     print("\n" + "=" * 50 + "\n")
     print("Total number of downloaded files: " + str(num_downloaded))
     print("Total number of files skipped for download: " + str(num_skipped))
 
-    with open(JSON_DIRECTORY + JSON_FILENAME, "w") as json_file:
-        json_file.write(json.dumps(parsed_quests, indent=4))
+    # with open(JSON_DIRECTORY + JSON_FILENAME, "w") as json_file:
+    #     json_file.write(json.dumps(parsed_quests, indent=4))
 
 if __name__ == "__main__":
     main()
