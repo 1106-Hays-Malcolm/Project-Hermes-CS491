@@ -9,24 +9,27 @@ from time import sleep
 ROOT_URL = "https://bg3.wiki/wiki"
 DATA_DIRECTORY = "./data"
 HTML_DIRECTORY = DATA_DIRECTORY + "/rawHTML"
-QUESTS_DIRECTORY = DATA_DIRECTORY + "/quests"
+QUESTS_DIRECTORY = DATA_DIRECTORY + "/json"
 
 # CSS class names for BeautifulSoup
 QUEST_CLASS_NAME = "bg3wiki-imagetext"
 QUEST_TEXT_CLASS_NAME = "bg3wiki-imagetext-text"
 
 # To avoid downloading the wiki a lot of times
-USE_DOWNLOADED_HTML = False
+USE_DOWNLOADED_HTML = True
 # To avoid downloading HTML pages that were already downloaded
 SKIP_DOWNLOADED_FILES = True
 
 # A short delay so you won't get locked out for making too many requests
 REQUEST_DELAY_SECONDS = 5
 
+
+# Get the names of all the files that have already been previously downloaded
 def get_all_downloaded_filenames(path):
     filenames = listdir(path)
     filenames_no_ext = []
 
+    # Put the slash in front of every file name
     for filename in filenames:
         filenames_no_ext.append("/" + str(Path(filename).with_suffix("")))
 
@@ -34,16 +37,22 @@ def get_all_downloaded_filenames(path):
 
 
 def get_html(path, excluded_paths=[]):
+    # If we are using the HTML that was previously downloaded
     if USE_DOWNLOADED_HTML:
         with open(HTML_DIRECTORY + path + ".html", "rb") as file:
             raw_html = file.read()
+
+    # If we are downloading the HTML
     else:
-        if path not in excluded_paths:
+        # If the file should be skipped for download and use the file on disk instead
+        if not SKIP_DOWNLOADED_FILES or path not in excluded_paths:
             print("Now downloading: " + path)
             raw_html = requests.get(ROOT_URL + path).content
             sleep(REQUEST_DELAY_SECONDS)
             with open(HTML_DIRECTORY + path + ".html", "wb+") as file:
                 file.write(raw_html)
+
+        # If a new HTML file should be downloaded
         else:
             print("Skipping and using previously downloaded file: " + path)
             with open(HTML_DIRECTORY + path + ".html", "rb") as file:
@@ -75,12 +84,12 @@ def main():
         if title_link == -1:
             continue
 
+        # Get information from the individual links
         title_link_text = title_link.text.strip()
         title_link_url = title_link["href"]
         title_link_url_fixed = "/" + re.sub(r"/.*/", "", title_link_url)
 
-
-        if title_link_url_fixed not in filenames:
+        if not SKIP_DOWNLOADED_FILES or title_link_url_fixed not in filenames:
             num_downloaded += 1
         else:
             num_skipped += 1
