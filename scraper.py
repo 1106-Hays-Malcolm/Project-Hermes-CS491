@@ -3,6 +3,7 @@ from bs4 import BeautifulSoup
 from pathlib import Path
 import re
 from os import listdir
+from time import sleep
 
 # URLs and directories
 ROOT_URL = "https://bg3.wiki/wiki"
@@ -15,10 +16,12 @@ QUEST_CLASS_NAME = "bg3wiki-imagetext"
 QUEST_TEXT_CLASS_NAME = "bg3wiki-imagetext-text"
 
 # To avoid downloading the wiki a lot of times
-USE_DOWNLOADED_HTML = True
+USE_DOWNLOADED_HTML = False
 # To avoid downloading HTML pages that were already downloaded
 SKIP_DOWNLOADED_FILES = True
 
+# A short delay so you won't get locked out for making too many requests
+REQUEST_DELAY_SECONDS = 5
 
 def get_all_downloaded_filenames(path):
     filenames = listdir(path)
@@ -35,10 +38,16 @@ def get_html(path, excluded_paths=[]):
         with open(HTML_DIRECTORY + path + ".html", "rb") as file:
             raw_html = file.read()
     else:
-        print("Now downloading: " + path)
-        raw_html = requests.get(ROOT_URL + path).content
-        with open(HTML_DIRECTORY + path + ".html", "wb+") as file:
-            file.write(raw_html)
+        if path not in excluded_paths:
+            print("Now downloading: " + path)
+            raw_html = requests.get(ROOT_URL + path).content
+            sleep(REQUEST_DELAY_SECONDS)
+            with open(HTML_DIRECTORY + path + ".html", "wb+") as file:
+                file.write(raw_html)
+        else:
+            print("Skipping and using previously downloaded file: " + path)
+            with open(HTML_DIRECTORY + path + ".html", "rb") as file:
+                raw_html = file.read()
 
     return raw_html
 
@@ -71,12 +80,14 @@ def main():
         title_link_url_fixed = "/" + re.sub(r"/.*/", "", title_link_url)
 
 
-        if title_link_url_fixed in filenames:
+        if title_link_url_fixed not in filenames:
             num_downloaded += 1
         else:
             num_skipped += 1
-        # get_html(title_link_url_fixed)
 
+        get_html(title_link_url_fixed, filenames)
+
+    print("\n" + "=" * 50 + "\n")
     print("Total number of downloaded files: " + str(num_downloaded))
     print("Total number of files skipped for download: " + str(num_skipped))
 
