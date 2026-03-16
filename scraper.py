@@ -10,7 +10,8 @@ import json
 ROOT_URL = "https://bg3.wiki/wiki"
 DATA_DIRECTORY = "./data"
 HTML_DIRECTORY = DATA_DIRECTORY + "/rawHTML"
-QUESTS_DIRECTORY = DATA_DIRECTORY + "/json"
+JSON_DIRECTORY = DATA_DIRECTORY + "/json"
+JSON_FILENAME = "/data.json"
 
 # CSS class names for BeautifulSoup
 QUEST_CLASS_NAME = "bg3wiki-imagetext"
@@ -70,9 +71,9 @@ def get_html(path, excluded_paths=[]):
     return raw_html
 
 
-def parse_quest(html):
+def parse_quest_objectives(html):
     soup = BeautifulSoup(html, "html.parser")
-    parsed_quest = {}
+    parsed_objectives = {}
 
     objectives = soup.find_all(True, {"class": QUEST_OBJECTIVE_CLASSES})
     for objective in objectives:
@@ -96,13 +97,14 @@ def parse_quest(html):
                 if item != '':
                     objective_list_cleaned.append(item)
 
-        print(title)
-        print(objective_list_cleaned)
-        print()
+        parsed_objectives[title] = objective_list_cleaned
+
+    return parsed_objectives
+
 
 def main():
     # Create directories to store scraped data if they do not exist
-    for p in [DATA_DIRECTORY, QUESTS_DIRECTORY, HTML_DIRECTORY]:
+    for p in [DATA_DIRECTORY, JSON_DIRECTORY, HTML_DIRECTORY]:
         Path(p).mkdir(parents=True, exist_ok=True)
 
     # The page that lists all of the quests with links
@@ -119,6 +121,7 @@ def main():
     num_skipped = 0
 
     quests = soup.find_all(class_=QUEST_CLASS_NAME)
+    parsed_quests = {}
     for quest in quests:
         quest_text = quest.find(class_=QUEST_TEXT_CLASS_NAME)
         title_link = quest_text.find("a")
@@ -137,12 +140,14 @@ def main():
             num_skipped += 1
 
         quest_html = get_html(title_link_url_fixed, filenames)
-        parse_quest(quest_html)
+        parsed_quests[title_link_text] = parse_quest_objectives(quest_html)
 
     print("\n" + "=" * 50 + "\n")
     print("Total number of downloaded files: " + str(num_downloaded))
     print("Total number of files skipped for download: " + str(num_skipped))
 
+    with open(JSON_DIRECTORY + JSON_FILENAME, "w") as json_file:
+        json_file.write(json.dumps(parsed_quests, indent=4))
 
 if __name__ == "__main__":
     main()
