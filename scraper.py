@@ -122,6 +122,7 @@ def main():
 
     quests = soup.find_all(class_=QUEST_CLASS_NAME)
     parsed_quests = {}
+    parsed_objectives = {}
     for quest in quests:
         quest_text = quest.find(class_=QUEST_TEXT_CLASS_NAME)
         title_link = quest_text.find("a")
@@ -140,7 +141,8 @@ def main():
             num_skipped += 1
 
         quest_html = get_html(title_link_url_fixed, filenames)
-        parsed_quests[title_link_text] = parse_quest_objectives(quest_html)
+        parsed_quests[title_link_text] = {}
+        parsed_quests[title_link_text]["Objectives"] = parse_quest_objectives(quest_html)
 
     print("\n" + "=" * 50 + "\n")
     print("Total number of downloaded files: " + str(num_downloaded))
