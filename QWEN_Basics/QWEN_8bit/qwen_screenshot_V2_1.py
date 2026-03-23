@@ -30,6 +30,10 @@ def capture_region():
     with mss() as sct:
         shot = sct.grab(REGION)
         img = Image.frombytes("RGB", shot.size, shot.rgb)
+
+        #save the screenshot to current folder
+        img.save("screenshot.png")
+        
     return img
 
 # Load the vision-language model and processor, and configure device settings

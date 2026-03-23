@@ -1,5 +1,8 @@
 I have several redundant files here as I was running these locally while testing/comparing GPU usage.
 
+The test_image.png is an image of BDG3 coordinate close to correct size for testing inference.
+
+
 The naming convention is a little unorthodox and we can change it later I just needed to keep track of which ones were doing what.
 
 Each has a name such as qwen_screenShot_V(x)_(y)
@@ -17,6 +20,10 @@ Read Additional Notes before running y =3 or 4
 4 - loads in locally with timer
 
 Example: qwen_screenShot_V2_4 - 8 bit version loads local and has timer 
+
+
+
+Before running any versions that load locally do this:
 
 Locate Hugging Face Model Cache (Windows)
 
@@ -122,4 +129,30 @@ This version uses **4-bit quantization** via `bitsandbytes` to reduce GPU memory
 ### Expected Behavior
 - Model may still offload small portions to CPU depending on available VRAM
 - Minor warnings during load (e.g., casting or processor changes) are expected and do not affect functionality
+-----------------------------------------------------------------------------------
+
+
+GitHub push on 3/23/26
+
+I made a mistake when cleaning up the code prior to the last push. 
+
+1 There was argument error in the capture_region function. This is now fixed
+
+2 I removed the line that saves a png of the screenshot. It was useful for making sure I have the correct ROI so I added it back in.
+
+3 I have another small helper py I made included. It uses a commandline argument of a py file that prints the current ROI from that py file
+
+example in command line
+
+python roiTest.py qwen_screenshot_V3_1.py
+
+expected output will be:
+PS C:\LLM_Project\QWEN> python roiTest.py qwen_screenshot_V2_2.py
+left = 500
+top = 500
+width = 100
+height = 100
+Saved roiTest.png
+
+Tells you the region and gives in image so you can figure out the ROI without running the LLM everytime
 

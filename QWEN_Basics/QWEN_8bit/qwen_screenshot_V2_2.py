@@ -14,7 +14,7 @@ import time
 
 # Container for the Hugging Face model used in this code iteration
 #Now loaded locally 
-MODEL_NAME = r"C:\LLM_Project\models\qwen2.5-vl-7b"
+MODEL_NAME = "Qwen/Qwen2.5-VL-7B-Instruct"
 
 # Region Of Interest ROI defines the screen area to capture
 # "left" and "top" define the starting position
@@ -32,6 +32,10 @@ def capture_region():
     with mss() as sct:
         shot = sct.grab(REGION)
         img = Image.frombytes("RGB", shot.size, shot.rgb)
+
+        #save the screenshot to current folder
+        img.save("screenshot.png")
+        
     return img
 
 # Load the vision-language model and processor, and configure device settings
@@ -146,7 +150,7 @@ def main():
 
     print("Capturing screen region...")
     t1 = time.time()
-    image = capture_region(REGION, IMAGE_PATH)
+    image = capture_region()
     t2 = time.time()
 
     print("Running inference...")

@@ -12,7 +12,7 @@ from transformers import AutoProcessor, Qwen2_5_VLForConditionalGeneration, Bits
 
 # Container for the Hugging Face model used in this code iteration
 #Now loaded locally 
-MODEL_NAME = r"C:\LLM_Project\models\qwen2.5-vl-7b"
+MODEL_NAME = r"C:\LLM_Project\QWEN\models\qwen2.5-vl-7b"
 
 # Region Of Interest ROI defines the screen area to capture
 # "left" and "top" define the starting position
@@ -30,6 +30,10 @@ def capture_region():
     with mss() as sct:
         shot = sct.grab(REGION)
         img = Image.frombytes("RGB", shot.size, shot.rgb)
+
+        #save the screenshot to current folder
+        img.save("screenshot.png")
+        
     return img
 
 # Load the vision-language model and processor, and configure device settings
