@@ -1,0 +1,3 @@
+[submodule "RAG"]
+	path = RAG
+	url = https://github.com/PieFlavr/CS491-RAG
