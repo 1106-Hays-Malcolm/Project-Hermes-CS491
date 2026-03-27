@@ -110,6 +110,13 @@ def parse_quest_objectives(soup):
     return parsed_objectives
 
 
+def clean_string(string):
+    return string \
+            .replace("\u00a0", "") \
+            .replace("\u202f", " ") \
+            .replace("\u2060", "")
+
+
 def parse_walkthrough(soup):
     parsed_walkthrough = ""
 
@@ -174,7 +181,7 @@ def parse_walkthrough(soup):
 
         next_tag = next_tag.next_sibling
 
-    return parsed_walkthrough
+    return clean_string(parsed_walkthrough)
 
 
 def main():
