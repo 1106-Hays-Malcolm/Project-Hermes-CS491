@@ -2,6 +2,10 @@
 
 Our repository for our CS 491 final project.
 
+## Python Specificaitons
+
+**Python Version:** 3.14.3
+
 ## Git Submodues
 
 To add your own repository as a submodule, you must do the following command...
