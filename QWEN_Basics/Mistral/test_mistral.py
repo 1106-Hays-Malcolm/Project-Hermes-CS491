@@ -15,7 +15,9 @@ model = AutoModelForCausalLM.from_pretrained(
 
 print("Model loaded")
 
-prompt = "You are an LLM tasked with answering the user's questions about the video game Baldur's Gate 3. The user is asking you a question about a certain quest in the game, and you will provide guidance. The user is probably lost, so you will need to provide exact instructions about where they should go next to complete the quest. A walkthrough is provided so you can better guide the user through the quest. The name of the quest is \"The Wizard of Waterdeep\". The user's question is \"im lost where i go next?!?!??!\". I will now provide the entire walkthrough for this quest:\n\n"
+user_question = "im lost where i go next?!?!??!"
+
+prompt = f"You are an LLM tasked with answering the user's questions about the video game Baldur's Gate 3. The user is asking you a question about a certain quest in the game, and you will provide guidance. The user is probably lost, so you will need to provide exact instructions about where they should go next to complete the quest. A walkthrough is provided so you can better guide the user through the quest. The name of the quest is \"The Wizard of Waterdeep\". The user's question is {user_question}. If the user's question is unclear or vauge, you must ask the user for clarification. If you ask the user for clarification, you must ask about details in the walkthrough to figure out what part of the quest the user is currently playing in. You must answer the user's question as if you are speaking to the user and responding to their question. You must answer the question informally in a conversational manner. You should never include phrases such as \"the user\" or \"the player\". You should refer to the player in the second person as \"you\", never \"the user\". NEVER include the phrase \"the user\" in your response. It is of utmost importance that you do not refer to the user in the third person. I will now provide the entire walkthrough for this quest:\n\n"
 
 walkthrough = '''Gale’s story spans the entire game. This walkthrough contains spoilers for all three Acts.
 Recruiting Gale
@@ -102,12 +104,13 @@ Stabilise Gale's Netherese orb.
 ↑  If Gale dies for the first time only after his Netherese Orb has been stabilized the quest-line In Case of Death... closes and cannot be completed.'''
 
 prompt += walkthrough
-
+prompt += "\n\n\n"
+prompt += f"This is the end of the walkthrough. Now answer the user's question informally. Remember, the user's question is \"{user_question}\". Answer the user in the second person and never refer to them as \"the user\". Write your answer now:\n"
 
 inputs = tokenizer(prompt, return_tensors="pt").to("cuda")
 outputs = model.generate(
     **inputs,
-    max_new_tokens=50,
+    max_new_tokens=1000,
     do_sample=False
 )
 
