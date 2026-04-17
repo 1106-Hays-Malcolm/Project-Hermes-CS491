@@ -2,18 +2,44 @@
 
 <html>
     <head>
+        <meta charset="utf-8">
         <title>
             Project Hermes
         </title>
+        <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
     </head>
     <body>
-        <form action="/" method="post">
-            <h1>Project Hermes LLM</h1>
-            <label for="mission-name">Mission Name (<i>Note: This does not need to be exact.</i>)</label>
-            <input id="mission-name" name="mission-name" type="text">
-            <label for="question">Question for LLM</label>
-            <textarea id="question" name="question" rows=4 cols=50></textarea>
-            <input type="submit" value="Submit Question">
-        </form>
+        <div class="wrapper">
+
+        <div class="title-wrapper-wrapper">
+            <div class="title-wrapper yellow-border">
+                <h1>Project Hermes LLM</h1>
+            </div>
+        </div>
+
+        <main class="yellow-border">
+            <div class="subtitle-wrapper">
+                <h2 class="yellow-border">Ask a Question</h2>
+            </div>
+
+            <div class="form-wrapper">
+                <form action="/" method="post" class="yellow-border">
+                    <label for="mission-name">Mission Name (<i>Note: This does not need to be exact.</i>)</label>
+                    <div class="input-wrapper">
+                        <input id="mission-name" name="mission-name" type="text">
+                    </div>
+                    <label for="question">Question for LLM</label>
+                    <div class="input-wrapper">
+                        <textarea id="question" name="question" rows=4 cols=50></textarea>
+                    </div>
+                    <div class="input-wrapper">
+                        <input type="submit" value="Submit Question">
+                    </div>
+                </form>
+            </div>
+        </main>
+
+        </div>
     </body>
 </html>
