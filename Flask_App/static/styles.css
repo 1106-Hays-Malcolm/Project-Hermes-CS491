@@ -76,3 +76,16 @@ label {
     justify-content: center;
     align-items: center;
 }
+
+.compass {
+    width: 100px;
+    height: 100px;
+    background-color: red;
+    display: inline-block;
+    border-radius: 100%;
+}
+
+.spacing {
+    margin-left: 10px;
+    margin-right: 10px;
+}
