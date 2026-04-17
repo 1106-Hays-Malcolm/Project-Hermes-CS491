@@ -7,12 +7,13 @@
         </title>
     </head>
     <body>
-        <form>
+        <form action="/" method="post">
             <h1>Project Hermes LLM</h1>
             <label for="mission-name">Mission Name (<i>Note: This does not need to be exact.</i>)</label>
-            <input id="mission-name" type="text">
+            <input id="mission-name" name="mission-name" type="text">
             <label for="question">Question for LLM</label>
-            <textarea id="question" rows=4 cols=50></textarea>
+            <textarea id="question" name="question" rows=4 cols=50></textarea>
+            <input type="submit" value="Submit Question">
         </form>
     </body>
 </html>
