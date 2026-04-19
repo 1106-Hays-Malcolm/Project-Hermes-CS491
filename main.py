@@ -1,8 +1,9 @@
-from transformers import AutoTokenizer, AutoModelForCausalLM
+from transformers import AutoTokenizer, AutoModelForCausalLM, TextIteratorStreamer
 import torch
 from Flask_App import web_app
 import threading
 import sys
+import time
 
 # Hack needed to import RAG from the project's root
 sys.path.append("RAG")
@@ -65,6 +66,8 @@ def main():
     flask_thread = threading.Thread(target=run_flask, daemon=True)
     flask_thread.start()
 
+    # We only include the walkthrough in the first prompt
+    # Maybe we can change this later
     start_of_conversation = True
 
     # Listen for user input while Flask runs in the background
@@ -79,20 +82,48 @@ def main():
         if (start_of_conversation):
             real_mission_name, walkthrough = get_walkthrough(mission_name)
             prompt = build_prompt(question, real_mission_name, walkthrough)
+            start_of_conversation = False
         else:
             prompt = question
 
+        streamer = TextIteratorStreamer(tokenizer, skip_prompt=True, skip_special_tokens=True)
+
         inputs = tokenizer(prompt, return_tensors="pt").to("cuda")
-        outputs = model.generate(
+
+        generation_args = {
             **inputs,
-            max_new_tokens=1000,
-            do_sample=False
+            "max_new_tokens": 1000,
+            "do_sample": False,
+            "streamer": streamer,
+        }
+
+        generation_thread = threading.Thread(
+            target=model.generate,
+            kwargs=generation_args,
         )
+        generation_thread.start()
+
+        # https://huggingface.co/blog/aifeifei798/transformers-streaming-output
+
+        # acc_text = ""
+        for text_token in streamer:
+            time.sleep(0.01)  # Simulate real-time output with a short delay
+            # acc_text += text_token  # Append the generated token to the accumulated text
+            if text_token != "":
+                web_app.new_tokens_queue.put(text_token)
+
+        generation_thread.join()
+
+        # outputs = model.generate(
+        #     **inputs,
+        #     max_new_tokens=1000,
+        #     do_sample=False
+        # )
 
         # This is a bad design because it waits for the model to finish generation
-        reply = tokenizer.decode(outputs[0], skip_special_tokens=True)
+        # reply = tokenizer.decode(outputs[0], skip_special_tokens=True)
 
-        web_app.new_tokens_queue.put(reply)
+        # web_app.new_tokens_queue.put(reply)
 
 
 if __name__ == "__main__":
