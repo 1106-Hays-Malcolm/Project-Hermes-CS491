@@ -44,6 +44,9 @@
                     <img class="compass-needle" alt="compass needle" src="{{ url_for('static', filename="hermes_compass_red_needle.png") }}">
                 </div>
             </div>
+            <div class="yellow-border" id="context-container">
+                <p id="context"></p>
+            </div>
         </main>
 
         </div>
@@ -59,6 +62,19 @@
                 // document.getElementById("mission-name").value = "";
                 document.getElementById("question").value = "";
             }
+
+            (function(){
+                const xhttp = new XMLHttpRequest(); 
+                xhttp.onload = function() {
+                    document.getElementById("context").value += this.responseText;
+                }
+                xhttp.open("GET", "/get-conversation");
+                xhttp.send();
+
+                // Call self every half second
+                setTimeout(arguments.callee, 500);
+            })();
+
         </script>
     </body>
 </html>
