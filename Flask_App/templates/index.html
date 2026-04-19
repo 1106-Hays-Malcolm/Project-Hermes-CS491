@@ -24,7 +24,7 @@
             </div>
 
             <div class="form-wrapper">
-                <form action="/" method="post" class="yellow-border">
+                <div class="yellow-border">
                     <label for="mission-name">Mission Name (<i>Note: This does not need to be exact.</i>)</label>
                     <div class="input-wrapper">
                         <input id="mission-name" name="mission-name" type="text">
@@ -34,9 +34,9 @@
                         <textarea id="question" name="question" rows=4 cols=50></textarea>
                     </div>
                     <div class="input-wrapper">
-                        <input type="submit" value="Submit Question">
+                        <input type="submit" value="Submit Question" onclick="onSubmit()">
                     </div>
-                </form>
+                </div>
                 <div class="spacing"></div>
                 <div class="compass-parent">
                     <img class="compass" alt="compass" src="{{ url_for('static', filename="hermes_compass_circle.png") }}">
@@ -47,5 +47,18 @@
         </main>
 
         </div>
+
+        <script>
+            function onSubmit() {
+                const xhttp = new XMLHttpRequest(); 
+                xhttp.open("POST", "/form-submit", true);
+                xhttp.setRequestHeader("Content-type", "application/json");
+                var mission_name = document.getElementById("mission-name").value;
+                var question = document.getElementById("question").value;
+                xhttp.send(JSON.stringify({"mission-name": mission_name, "question": question}));
+                // document.getElementById("mission-name").value = "";
+                document.getElementById("question").value = "";
+            }
+        </script>
     </body>
 </html>
