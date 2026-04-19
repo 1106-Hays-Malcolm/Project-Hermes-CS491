@@ -16,12 +16,19 @@ model_name = "mistralai/Mistral-7B-Instruct-v0.3"
 print("Loading tokenizer...")
 tokenizer = AutoTokenizer.from_pretrained(model_name)
 
+
+print("Checking CUDA availabiltiy...")
+device = "cuda" if torch.cuda.is_available() else "cpu"
+
 print("Loading model...")
 model = AutoModelForCausalLM.from_pretrained(
     model_name,
-    torch_dtype=torch.float16,
-    device_map="auto"
+    torch_dtype=torch.float16 if device == "cuda" else torch.float32,
+   device_map="auto" if device == "cuda" else None
 )
+
+if device == "cpu":
+    model.to(device)
 
 print("Model loaded")
 
@@ -88,7 +95,7 @@ def main():
 
         streamer = TextIteratorStreamer(tokenizer, skip_prompt=True, skip_special_tokens=True)
 
-        inputs = tokenizer(prompt, return_tensors="pt").to("cuda")
+        inputs = tokenizer(prompt, return_tensors="pt").to(device)
 
         generation_args = {
             **inputs,

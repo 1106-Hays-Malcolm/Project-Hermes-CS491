@@ -8,3 +8,4 @@ pydantic_settings==2.13.1
 Requests==2.33.1
 torch==2.11.0
 transformers==5.4.0
+accelerate==1.13.0
