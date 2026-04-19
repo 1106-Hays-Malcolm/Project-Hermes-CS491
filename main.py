@@ -41,7 +41,7 @@ def get_walkthrough(mission_name):
     if (true_mission_name == ""):
         raise ValueError("Could not find quest!")
 
-    return walkthrough
+    return true_mission_name, walkthrough
 
 
 def build_prompt(user_question, true_mission_name, walkthrough):
@@ -65,12 +65,34 @@ def main():
     flask_thread = threading.Thread(target=run_flask, daemon=True)
     flask_thread.start()
 
+    start_of_conversation = True
+
     # Listen for user input while Flask runs in the background
     while True:
         new_result = web_app.result_queue.get()
         print(new_result)
-        # Parrot back the user's question for testing
-        web_app.new_tokens_queue.put(new_result["question"])
+
+        mission_name = new_result["mission-name"]
+        question = new_result["question"]
+        prompt = ""
+
+        if (start_of_conversation):
+            real_mission_name, walkthrough = get_walkthrough(mission_name)
+            prompt = build_prompt(question, real_mission_name, walkthrough)
+        else:
+            prompt = question
+
+        inputs = tokenizer(prompt, return_tensors="pt").to("cuda")
+        outputs = model.generate(
+            **inputs,
+            max_new_tokens=1000,
+            do_sample=False
+        )
+
+        # This is a bad design because it waits for the model to finish generation
+        reply = tokenizer.decode(outputs[0], skip_special_tokens=True)
+
+        web_app.new_tokens_queue.put(reply)
 
 
 if __name__ == "__main__":
