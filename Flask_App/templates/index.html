@@ -38,7 +38,11 @@
                     </div>
                 </form>
                 <div class="spacing"></div>
-                <img class="compass" alt="compass" src="{{ url_for('static', filename='hermes_compass_circle.png') }}">
+                <div class="compass-parent">
+                    <img class="compass" alt="compass" src="{{ url_for('static', filename="hermes_compass_circle.png") }}">
+                    <img class="compass-needle" alt="compass needle" src="{{ url_for('static', filename="hermes_compass_blue_needle.png") }}">
+                    <img class="compass-needle" alt="compass needle" src="{{ url_for('static', filename="hermes_compass_red_needle.png") }}">
+                </div>
             </div>
         </main>
 
