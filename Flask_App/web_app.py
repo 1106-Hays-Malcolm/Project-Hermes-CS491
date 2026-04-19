@@ -7,14 +7,30 @@ import queue
 def init():
     global app
     global result_queue
+    global new_tokens_queue
 
 
 app = Flask(__name__)
 result_queue = queue.Queue()
+new_tokens_queue = queue.Queue()
+
 
 @app.route("/", methods=["GET"])
 def hello_world():
     return render_template("index.html")
+
+
+@app.route("/get-conversation", methods=["GET"])
+def send_conversation():
+    new_tokens = []
+
+    while True:
+        try:
+            new_tokens += new_tokens_queue.get_nowait()
+        except queue.Empty:
+            break
+
+    return new_tokens
 
 
 @app.route("/form-submit", methods=["POST"])
