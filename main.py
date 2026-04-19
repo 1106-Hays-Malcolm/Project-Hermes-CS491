@@ -19,6 +19,7 @@ tokenizer = AutoTokenizer.from_pretrained(model_name)
 
 print("Checking CUDA availabiltiy...")
 device = "cuda" if torch.cuda.is_available() else "cpu"
+
 if device == "cuda":
     print("CUDA is available. Using GPU.")
 else:
@@ -28,7 +29,7 @@ print("Loading model...")
 model = AutoModelForCausalLM.from_pretrained(
     model_name,
     torch_dtype=torch.float16 if device == "cuda" else torch.float32,
-   device_map="auto" if device == "cuda" else None
+    device_map="auto" if device == "cuda" else None
 )
 
 if device == "cpu":
@@ -83,7 +84,9 @@ def main():
 
     # Listen for user input while Flask runs in the background
     while True:
+        print("Awaiting user input...")
         new_result = web_app.result_queue.get()
+        print("Got user input from Flask:" + str(new_result))
         print(new_result)
 
         mission_name = new_result["mission-name"]
@@ -91,16 +94,20 @@ def main():
         prompt = ""
 
         if (start_of_conversation):
+            print("Start of conversation; Retrieving walkthrough and building prompt...")
             real_mission_name, walkthrough = get_walkthrough(mission_name)
             prompt = build_prompt(question, real_mission_name, walkthrough)
             start_of_conversation = False
         else:
+            print("Not start of conversation; Building prompt without walkthrough...")
             prompt = question
 
         streamer = TextIteratorStreamer(tokenizer, skip_prompt=True, skip_special_tokens=True)
 
-        inputs = tokenizer(prompt, return_tensors="pt").to(device)
-
+        print("Tokenizing prompt and starting generation...")
+        inputs = tokenizer(prompt, return_tensors="pt").to(model.device)
+        inputs= {k: v.to(model.device) for k, v in inputs.items()}
+        
         generation_args = {
             **inputs,
             "max_new_tokens": 1000,
@@ -108,19 +115,25 @@ def main():
             "streamer": streamer,
         }
 
+
         generation_thread = threading.Thread(
             target=model.generate,
             kwargs=generation_args,
         )
+        print("Starting generation thread...")
         generation_thread.start()
 
         # https://huggingface.co/blog/aifeifei798/transformers-streaming-output
 
+        print("Streaming output...")
+        print("Streamer is gone!") if streamer is None else None
         for text_token in streamer:
+            print("LLM is currently thinking...")
             time.sleep(0.01)  # Simulate real-time output with a short delay
             if text_token != "":
                 web_app.new_tokens_queue.put(text_token)
 
+        print("Joining generation thread...")
         generation_thread.join()
 
 
