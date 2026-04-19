@@ -4,7 +4,7 @@ Our repository for our CS 491 final project.
 
 ## Python Specificaitons
 
-**Python Version:** 3.14.3
+**Python Version:** 3.14.4
 
 ## Git Submodues
 

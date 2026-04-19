@@ -1,4 +1,4 @@
--r rag/requirements.txt
+-r RAG/requirements.txt
 beautifulsoup4==4.14.3
 chromadb==1.5.8
 Flask==3.1.3
