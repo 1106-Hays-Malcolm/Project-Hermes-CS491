@@ -62,9 +62,14 @@
                 document.getElementById("question").value = "";
                 if (question != "") {
                     const newP = document.createElement("p");
+                    const newP2 = document.createElement("p");
+
                     const newContent = document.createTextNode("You: " + question);
+                    const newContent2 = document.createTextNode("Hermes: ");
                     document.getElementById("context-container").appendChild(newP);
+                    document.getElementById("context-container").appendChild(newP2);
                     newP.appendChild(newContent);
+                    newP2.appendChild(newContent2);
                 }
             }
 
@@ -77,16 +82,16 @@
                     // var context = String(document.getElementById("context").innerHTML);
                     var context = ""
                     if (response != "") {
-                        context += "Hermes: ";
                         response.forEach(function(item, index) {
                             console.log("loop: " + item);
                             context += item;
                         });
 
-                        const newP = document.createElement("p");
-                        const newContent = document.createTextNode(context);
-                        document.getElementById("context-container").appendChild(newP);
-                        newP.appendChild(newContent);
+                        // const newP = document.createElement("p");
+                        // const newContent = document.createTextNode(context);
+                        responseArea = document.getElementById("context-container").lastChild;
+                        responseArea.innerHTML += context
+                        // newP.appendChild(newContent);
                     }
                 }
                 xhttp.open("GET", "/get-conversation");
