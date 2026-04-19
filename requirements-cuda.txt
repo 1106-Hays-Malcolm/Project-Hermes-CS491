@@ -1,4 +1,4 @@
--r RAG/requirements.txt
+--extra-index-url https://download.pytorch.org/whl/cu130
 torch==2.11.0
 beautifulsoup4==4.14.3
 chromadb==1.5.8
@@ -9,3 +9,5 @@ pydantic_settings==2.13.1
 Requests==2.33.1
 transformers==5.4.0
 accelerate==1.13.0
+
+-r RAG/requirements-cuda.txt

@@ -19,6 +19,10 @@ tokenizer = AutoTokenizer.from_pretrained(model_name)
 
 print("Checking CUDA availabiltiy...")
 device = "cuda" if torch.cuda.is_available() else "cpu"
+if device == "cuda":
+    print("CUDA is available. Using GPU.")
+else:
+    print("CUDA is not available. Using CPU.")
 
 print("Loading model...")
 model = AutoModelForCausalLM.from_pretrained(
