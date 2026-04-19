@@ -24,7 +24,7 @@
             </div>
 
             <div class="form-wrapper">
-                <div class="yellow-border">
+                <div class="yellow-border form-padding">
                     <label for="mission-name">Mission Name (<i>Note: This does not need to be exact.</i>)</label>
                     <div class="input-wrapper">
                         <input id="mission-name" name="mission-name" type="text">
@@ -44,8 +44,7 @@
                     <img class="compass-needle" alt="compass needle" src="{{ url_for('static', filename="hermes_compass_red_needle.png") }}">
                 </div>
             </div>
-            <div class="yellow-border" id="context-container">
-                <p id="context"></p>
+            <div class="yellow-border context-wrapper" id="context-container">
             </div>
         </main>
 
@@ -61,12 +60,34 @@
                 xhttp.send(JSON.stringify({"mission-name": mission_name, "question": question}));
                 // document.getElementById("mission-name").value = "";
                 document.getElementById("question").value = "";
+                if (question != "") {
+                    const newP = document.createElement("p");
+                    const newContent = document.createTextNode("You: " + question);
+                    document.getElementById("context-container").appendChild(newP);
+                    newP.appendChild(newContent);
+                }
             }
 
             (function(){
                 const xhttp = new XMLHttpRequest(); 
                 xhttp.onload = function() {
-                    document.getElementById("context").value += this.responseText;
+                    var response = JSON.parse(this.responseText);
+                    console.log(response);
+
+                    // var context = String(document.getElementById("context").innerHTML);
+                    var context = ""
+                    if (response != "") {
+                        context += "Hermes: ";
+                        response.forEach(function(item, index) {
+                            console.log("loop: " + item);
+                            context += item;
+                        });
+
+                        const newP = document.createElement("p");
+                        const newContent = document.createTextNode(context);
+                        document.getElementById("context-container").appendChild(newP);
+                        newP.appendChild(newContent);
+                    }
                 }
                 xhttp.open("GET", "/get-conversation");
                 xhttp.send();
