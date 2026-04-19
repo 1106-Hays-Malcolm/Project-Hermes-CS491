@@ -45,10 +45,13 @@ h1 {
     margin: 5px;
 }
 
+.form-padding {
+    padding: 10px;
+}
+
 form {
-    margin: 5px;
+    margin: 10px;
     display: inline-block;
-    padding: 5px;
 }
 
 main {
@@ -58,6 +61,11 @@ main {
 h2 {
     text-align: center;
     color: #F0F6F6;
+}
+
+p {
+    color: #F0F6F6;
+    font-size: 1.1rem;
 }
 
 .subtitle-wrapper {
@@ -82,6 +90,7 @@ label {
     position: relative;
     top: 0;
     left: 0;
+    margin-bottom: 20px;
 }
 
 .compass {
@@ -104,4 +113,10 @@ label {
 .spacing {
     margin-left: 10px;
     margin-right: 10px;
+}
+
+.context-wrapper {
+    margin: 30px;
+    height: 300px;
+    overflow: auto;
 }
