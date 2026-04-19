@@ -105,25 +105,12 @@ def main():
 
         # https://huggingface.co/blog/aifeifei798/transformers-streaming-output
 
-        # acc_text = ""
         for text_token in streamer:
             time.sleep(0.01)  # Simulate real-time output with a short delay
-            # acc_text += text_token  # Append the generated token to the accumulated text
             if text_token != "":
                 web_app.new_tokens_queue.put(text_token)
 
         generation_thread.join()
-
-        # outputs = model.generate(
-        #     **inputs,
-        #     max_new_tokens=1000,
-        #     do_sample=False
-        # )
-
-        # This is a bad design because it waits for the model to finish generation
-        # reply = tokenizer.decode(outputs[0], skip_special_tokens=True)
-
-        # web_app.new_tokens_queue.put(reply)
 
 
 if __name__ == "__main__":
