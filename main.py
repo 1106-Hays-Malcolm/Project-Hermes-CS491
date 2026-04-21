@@ -82,6 +82,32 @@ def main():
     # Maybe we can change this later
     start_of_conversation = True
 
+    def doInfoUpdates():
+        import time
+
+        start_time = time.time()
+        while(True):
+            end_time = time.time()
+            seconds = end_time - start_time
+            
+            # (L) cycle and normalze over a minute and scale to degrees (0-360)
+            web_app.compass_degrees = (seconds % 60.)/60. * 360.
+            time.sleep(1)
+
+    info_update_args = ()
+
+    # (L) Cursed Evil Global Thread b/c lazy access
+    global web_app_info_update_thread
+
+    web_app_info_update_thread = threading.Thread(
+        # (L) Make thread run function ot update elements like compass
+        target=doInfoUpdates,
+        kwargs=None
+    )   
+
+    # (L) Start element update thread, joins back on program end!
+    web_app_info_update_thread.start()
+
     # Listen for user input while Flask runs in the background
     while True:
         print("Awaiting user input...")
@@ -135,6 +161,8 @@ def main():
 
         print("Joining generation thread...")
         generation_thread.join()
+
+    web_app_info_update_thread.join()
 
 
 if __name__ == "__main__":
