@@ -8,6 +8,8 @@ def init():
     global app
     global result_queue
     global new_tokens_queue
+    global compass_degrees
+    compass_degrees = 90.
 
 
 app = Flask(__name__)
@@ -44,7 +46,7 @@ def get_form_data():
 @app.route("/update-compass", methods=["GET"])
 def update_compass():
     # (L) Have to return as a string so parse on the other end.
-    degrees = "0"
+    degrees = str(compass_degrees)
     return degrees
 
     
