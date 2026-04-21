@@ -40,3 +40,11 @@ def get_form_data():
     # result_queue.put({"mission-name": mission_name, "question": question})
     result_queue.put(request.get_json())
     return '', 204
+
+@app.route("/update-compass", methods=["GET"])
+def update_compass():
+    # (L) Have to return as a string so parse on the other end.
+    degrees = "0"
+    return degrees
+
+    
