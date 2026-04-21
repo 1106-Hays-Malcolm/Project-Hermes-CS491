@@ -73,6 +73,26 @@
                 }
             }
 
+            // (L) constant compass update call
+            (function(){
+                const xhttp = new XMLHttpRequest(); 
+                xhttp.onload = function() {
+                    var degrees = parseFloat(this.responseText);
+                    console.log("Compass Update: " + degrees);
+                    var needle = document.getElementsByClassName("compass-needle")[0];
+                    
+                    needle.style.transform = "rotate(" + degrees + "deg)";
+
+                }
+                xhttp.open("GET", "/update-compass");
+                xhttp.send();
+
+                // Call self every half second
+                setTimeout(arguments.callee, 500);
+
+            })();
+
+            // (L) Get conversation update call
             (function(){
                 const xhttp = new XMLHttpRequest(); 
                 xhttp.onload = function() {
