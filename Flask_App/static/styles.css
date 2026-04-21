@@ -108,6 +108,8 @@ label {
     width: 100px;
     height: 100px;
     display: inline-block;
+    transform-origin: center center; 
+    /* its a SQUARE that covers the CIRCLE which JUST so happens to have the compass needle*/ 
 }
 
 .spacing {
