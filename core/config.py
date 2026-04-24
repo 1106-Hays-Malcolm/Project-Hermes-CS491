@@ -107,6 +107,125 @@ class TextConfig(BaseSettings):
         _save(self, path)
 
 
+class TranscriptConfig(BaseSettings):
+    """Configuration for transcript logging.
+
+    Attributes:
+        directory: str - folder where transcript files are stored.
+        filename_prefix: str - prefix for each transcript file.
+        encoding: str - file encoding for transcript files.
+    """
+
+    model_config = SettingsConfigDict(
+        json_file="transcript_config.json",
+        json_file_encoding="utf-8",
+        extra="ignore",
+        frozen=False,
+    )
+
+    directory: str = "hermes_transcripts"
+    filename_prefix: str = "transcript"
+    encoding: str = "utf-8"
+
+    @classmethod
+    def load(cls, path: str = "transcript_config.json", _data: dict = {}) -> "TranscriptConfig":
+        """Loads a TranscriptConfig instance from JSON or provided data.
+
+        Args:
+            path: Path to the standalone config JSON file.
+            _data: Optional dictionary to initialize the config.
+
+        Returns:
+            TranscriptConfig: The loaded transcript configuration.
+        """
+        if _data:
+            return cls(**_data)
+        if not os.path.exists(path):
+            return cls()
+        with open(path, encoding="utf-8") as f:
+            return cls(**json.load(f))
+
+    def save(self, path: str = "transcript_config.json"):
+        """Saves the transcript config to a JSON file.
+
+        Args:
+            path: Destination JSON file path.
+        """
+        _save(self, path)
+
+
+class CoreConfig(BaseSettings):
+    """Root configuration for the core pipeline.
+
+    Attributes:
+        vision: VisionConfig - vision subsystem config.
+        text: TextConfig - text subsystem config.
+        transcript: TranscriptConfig - transcript subsystem config.
+        vision_config_path: str - standalone vision config file path.
+        text_config_path: str - standalone text config file path.
+        transcript_config_path: str - standalone transcript config file path.
+    """
+
+    model_config = SettingsConfigDict(
+        extra="ignore",
+        frozen=False,
+    )
+
+    vision: VisionConfig = VisionConfig()
+    text: TextConfig = TextConfig()
+    transcript: TranscriptConfig = TranscriptConfig()
+
+    vision_config_path: str = "vision_config.json"
+    text_config_path: str = "text_config.json"
+    transcript_config_path: str = "transcript_config.json"
+
+    @classmethod
+    def load(cls, path: str = MASTER_CONFIG_PATH) -> "CoreConfig":
+        """Loads CoreConfig from a master JSON file.
+
+        Args:
+            path: Path to the master config JSON file.
+
+        Returns:
+            CoreConfig: The loaded root configuration.
+        """
+        if not os.path.exists(path):
+            return cls()
+        with open(path, encoding="utf-8") as f:
+            data = json.load(f)
+
+        vision = VisionConfig.load(path=cls().vision_config_path, _data=data.get("vision", {}))
+        text = TextConfig.load(path=cls().text_config_path, _data=data.get("text", {}))
+        transcript = TranscriptConfig.load(path=cls().transcript_config_path, _data=data.get("transcript", {}))
+
+        return cls(
+            vision=vision,
+            text=text,
+            transcript=transcript,
+            vision_config_path=data.get("vision_config_path", cls().vision_config_path),
+            text_config_path=data.get("text_config_path", cls().text_config_path),
+            transcript_config_path=data.get("transcript_config_path", cls().transcript_config_path),
+        )
+
+    def save(self, path: str = MASTER_CONFIG_PATH):
+        """Saves the full resolved core configuration to a master JSON file.
+
+        Args:
+            path: Destination master JSON file path.
+        """
+        data = {
+            "vision_config_path": self.vision_config_path,
+            "text_config_path": self.text_config_path,
+            "transcript_config_path": self.transcript_config_path,
+            "vision": self.vision.model_dump(mode="json"),
+            "text": self.text.model_dump(mode="json"),
+            "transcript": self.transcript.model_dump(mode="json"),
+        }
+        with open(path, "w", encoding="utf-8") as f:
+            json.dump(data, f, indent=2)
+
+
+
 def _save(config: BaseSettings, path: str):
     """Writes a config object's JSON representation to disk.
 
