@@ -175,6 +175,7 @@ class CoreConfig(BaseSettings):
 
     vision: VisionConfig = VisionConfig()
     text: TextConfig = TextConfig()
+    transcript: TranscriptConfig = TranscriptConfig()
     rag: Any = None
     vision_config_path: str = "vision_config.json"
     text_config_path: str = "text_config.json"
