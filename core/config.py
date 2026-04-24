@@ -1,5 +1,7 @@
 import json
 import os
+from importlib import import_module
+from typing import Any
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -173,11 +175,36 @@ class CoreConfig(BaseSettings):
 
     vision: VisionConfig = VisionConfig()
     text: TextConfig = TextConfig()
-    transcript: TranscriptConfig = TranscriptConfig()
-
+    rag: Any = None
     vision_config_path: str = "vision_config.json"
     text_config_path: str = "text_config.json"
     transcript_config_path: str = "transcript_config.json"
+    rag_config_path: str = "rag_config.json"
+
+    @classmethod
+    def _load_rag_config(cls, data: dict) -> Any:
+        """Loads the RAG config section if the RAG module is available.
+
+        Args:
+            data: The RAG section from a master config file.
+
+        Returns:
+            Any: The instantiated RAGConfig object or the raw data.
+        """
+        if not data:
+            return None
+
+        for module_name in ("RAG.rag.rag_config", "rag.rag_config"):
+            try:
+                module = import_module(module_name)
+                RAGConfig = getattr(module, "RAGConfig")
+                return RAGConfig(**data)
+            except (ModuleNotFoundError, ImportError, AttributeError):
+                continue
+            except Exception:
+                return data
+
+        return data
 
     @classmethod
     def load(cls, path: str = MASTER_CONFIG_PATH) -> "CoreConfig":
@@ -189,22 +216,26 @@ class CoreConfig(BaseSettings):
         Returns:
             CoreConfig: The loaded root configuration.
         """
+        default = cls()
         if not os.path.exists(path):
-            return cls()
+            return default
         with open(path, encoding="utf-8") as f:
             data = json.load(f)
 
-        vision = VisionConfig.load(path=cls().vision_config_path, _data=data.get("vision", {}))
-        text = TextConfig.load(path=cls().text_config_path, _data=data.get("text", {}))
-        transcript = TranscriptConfig.load(path=cls().transcript_config_path, _data=data.get("transcript", {}))
+        vision = VisionConfig.load(path=default.vision_config_path, _data=data.get("vision", {}))
+        text = TextConfig.load(path=default.text_config_path, _data=data.get("text", {}))
+        transcript = TranscriptConfig.load(path=default.transcript_config_path, _data=data.get("transcript", {}))
+        rag = cls._load_rag_config(data.get("rag", {}))
 
         return cls(
             vision=vision,
             text=text,
             transcript=transcript,
-            vision_config_path=data.get("vision_config_path", cls().vision_config_path),
-            text_config_path=data.get("text_config_path", cls().text_config_path),
-            transcript_config_path=data.get("transcript_config_path", cls().transcript_config_path),
+            rag=rag,
+            vision_config_path=data.get("vision_config_path", default.vision_config_path),
+            text_config_path=data.get("text_config_path", default.text_config_path),
+            transcript_config_path=data.get("transcript_config_path", default.transcript_config_path),
+            rag_config_path=data.get("rag_config_path", default.rag_config_path),
         )
 
     def save(self, path: str = MASTER_CONFIG_PATH):
@@ -217,9 +248,11 @@ class CoreConfig(BaseSettings):
             "vision_config_path": self.vision_config_path,
             "text_config_path": self.text_config_path,
             "transcript_config_path": self.transcript_config_path,
+            "rag_config_path": self.rag_config_path,
             "vision": self.vision.model_dump(mode="json"),
             "text": self.text.model_dump(mode="json"),
             "transcript": self.transcript.model_dump(mode="json"),
+            "rag": self.rag.model_dump(mode="json") if hasattr(self.rag, "model_dump") else self.rag,
         }
         with open(path, "w", encoding="utf-8") as f:
             json.dump(data, f, indent=2)
