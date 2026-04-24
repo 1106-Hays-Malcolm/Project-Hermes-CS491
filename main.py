@@ -6,8 +6,7 @@ import sys
 import time
 
 # Hack needed to import RAG from the project's root
-sys.path.append("RAG")
-from rag.rag_api import RAGAPI
+from RAG.rag.rag_api import RAGAPI
 
 myrag = RAGAPI()
 
