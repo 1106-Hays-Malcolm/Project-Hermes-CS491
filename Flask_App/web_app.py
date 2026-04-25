@@ -2,14 +2,13 @@ from flask import Flask
 from flask import request
 from flask import render_template
 import queue
+import state
 
 
 def init():
     global app
     global result_queue
     global new_tokens_queue
-    global compass_degrees
-    compass_degrees = 90.
 
 
 app = Flask(__name__)
@@ -43,10 +42,9 @@ def get_form_data():
     result_queue.put(request.get_json())
     return '', 204
 
+
 @app.route("/update-compass", methods=["GET"])
 def update_compass():
-    # (L) Have to return as a string so parse on the other end.
-    degrees = str(compass_degrees)
+    # Have to return as a string so parse on the other end.
+    degrees = str(state.compass_degrees)
     return degrees
-
-    
