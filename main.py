@@ -1,41 +1,19 @@
-from transformers import AutoTokenizer, AutoModelForCausalLM, TextIteratorStreamer
-import torch
-from Flask_App import web_app
+from transformers import TextIteratorStreamer
 import threading
 import sys
 import time
 
-# Hack needed to import RAG from the project's root
-sys.path.append("RAG")
-from rag.rag_api import RAGAPI
+from Flask_App import web_app
+import state
+from compass_alg import update_compass
+from vision_loop import run_vl_loop
+from vision_loader import vl_model, vl_processor, vl_device
+from language_loader import ml_model, ml_tokenizer, ml_device
+from transcripts import transcript_out
+
+from RAG.rag.rag_api import RAGAPI
 
 myrag = RAGAPI()
-
-model_name = "mistralai/Mistral-7B-Instruct-v0.3"
-
-print("Loading tokenizer...")
-tokenizer = AutoTokenizer.from_pretrained(model_name)
-
-
-print("Checking CUDA availabiltiy...")
-device = "cuda" if torch.cuda.is_available() else "cpu"
-
-if device == "cuda":
-    print("CUDA is available. Using GPU.")
-else:
-    print("CUDA is not available. Using CPU.")
-
-print("Loading model...")
-model = AutoModelForCausalLM.from_pretrained(
-    model_name,
-    torch_dtype=torch.float16 if device == "cuda" else torch.float32,
-    device_map="auto" if device == "cuda" else None
-)
-
-if device == "cpu":
-    model.to(device)
-
-print("Model loaded")
 
 
 # Finds the walkthrough attached to the quest name with the highest cosine similarity
@@ -44,29 +22,43 @@ def get_walkthrough(mission_name):
     winner_score = 0
     true_mission_name = ""
     walkthrough = ""
+    objective_x = None
+    objective_y = None
+
     for r in results:
         current_score = r['score']
         if current_score > winner_score:
             true_mission_name = r['text']
             winner_score = current_score
-            walkthrough = r['metadata']['Walkthrough']
+            walkthrough = r['metadata'].get('Walkthrough', "")
+            objective_x = r['metadata'].get('objective_x')
+            objective_y = r['metadata'].get('objective_y')
 
-    if (true_mission_name == ""):
+    if true_mission_name == "":
         raise ValueError("Could not find quest!")
 
-    return true_mission_name, walkthrough
+    return true_mission_name, walkthrough, objective_x, objective_y
 
 
 def build_prompt(user_question, true_mission_name, walkthrough):
-    prompt = f"You are an LLM tasked with answering the user's questions about the video game Baldur's Gate 3. The user is asking you a question about a certain quest in the game, and you will provide guidance. The user is probably lost, so you will need to provide exact instructions about where they should go next to complete the quest. A walkthrough is provided so you can better guide the user through the quest. The name of the quest is \"{true_mission_name}\". The user's question is {user_question}. If the user's question is unclear or vauge, you must ask the user for clarification. If you ask the user for clarification, you must ask about details in the walkthrough to figure out what part of the quest the user is currently playing in. You must answer the user's question as if you are speaking to the user and responding to their question. You must answer the question informally in a conversational manner. You should never include phrases such as \"the user\" or \"the player\". You should refer to the player in the second person as \"you\", never \"the user\". NEVER include the phrase \"the user\" in your response. It is of utmost importance that you do not refer to the user in the third person. I will now provide the entire walkthrough for this quest:\n\n"
+    # Include current location from state
+    location_text = f"Current coordinates: ({state.current_x}, {state.current_y})\n"
 
+    prompt = (
+        "You are an LLM tasked with answering the user's questions about the video game Baldur's Gate 3. "
+        "The user is asking you a question about a certain quest in the game, and you will provide guidance. "
+        "The user is probably lost, so you will need to provide exact instructions about where they should go next to complete the quest. "
+        f"{location_text}"
+        f"The name of the quest is \"{true_mission_name}\". "
+        f"The user's question is {user_question}. "
+        "If the user's question is unclear or vague, you must ask for clarification.\n\n"
+        "Walkthrough:\n"
+    )
 
     prompt += walkthrough
-    prompt += "\n\n\n"
-    prompt += f"This is the end of the walkthrough. Now answer the user's question informally. Remember, the user's question is \"{user_question}\". Answer the user in the second person and never refer to them as \"the user\". Write your answer now:\n"
+    prompt += "\n\nAnswer the user directly:\n"
 
     return prompt
-
 
 
 def run_flask():
@@ -74,95 +66,89 @@ def run_flask():
     web_app.app.run()
 
 
+def run_compass_loop():
+    while True:
+        update_compass()
+        time.sleep(0.1)
+
+
 def main():
+    # Start Flask
     flask_thread = threading.Thread(target=run_flask, daemon=True)
     flask_thread.start()
 
-    # We only include the walkthrough in the first prompt
-    # Maybe we can change this later
+    # Start Vision Loop
+    run_flag = {"run": True}
+    vision_thread = threading.Thread(
+        target=run_vl_loop,
+        args=(vl_model, vl_processor, vl_device, run_flag),
+        daemon=True
+    )
+    vision_thread.start()
+
+    # Start Compass Loop
+    compass_thread = threading.Thread(target=run_compass_loop, daemon=True)
+    compass_thread.start()
+
     start_of_conversation = True
 
-    def doInfoUpdates():
-        import time
-
-        start_time = time.time()
-        while(True):
-            end_time = time.time()
-            seconds = end_time - start_time
-            
-            # (L) cycle and normalze over a minute and scale to degrees (0-360)
-            web_app.compass_degrees = (seconds % 60.)/60. * 360.
-            time.sleep(1)
-
-    info_update_args = ()
-
-    # (L) Cursed Evil Global Thread b/c lazy access
-    global web_app_info_update_thread
-
-    web_app_info_update_thread = threading.Thread(
-        # (L) Make thread run function ot update elements like compass
-        target=doInfoUpdates,
-        kwargs=None
-    )   
-
-    # (L) Start element update thread, joins back on program end!
-    web_app_info_update_thread.start()
-
-    # Listen for user input while Flask runs in the background
     while True:
         print("Awaiting user input...")
         new_result = web_app.result_queue.get()
-        print("Got user input from Flask:" + str(new_result))
-        print(new_result)
 
         mission_name = new_result["mission-name"]
         question = new_result["question"]
-        prompt = ""
 
-        if (start_of_conversation):
-            print("Start of conversation; Retrieving walkthrough and building prompt...")
-            real_mission_name, walkthrough = get_walkthrough(mission_name)
+        if start_of_conversation:
+            print("Retrieving walkthrough...")
+            real_mission_name, walkthrough, objective_x, objective_y = get_walkthrough(mission_name)
+
+            if objective_x is not None and objective_y is not None:
+                state.objective_x = int(float(objective_x))
+                state.objective_y = int(float(objective_y))
+            else:
+                state.objective_x = 0
+                state.objective_y = 0
+
             prompt = build_prompt(question, real_mission_name, walkthrough)
             start_of_conversation = False
         else:
-            print("Not start of conversation; Building prompt without walkthrough...")
             prompt = question
 
-        streamer = TextIteratorStreamer(tokenizer, skip_prompt=True, skip_special_tokens=True)
+        streamer = TextIteratorStreamer(
+            ml_tokenizer,
+            skip_prompt=True,
+            skip_special_tokens=True
+        )
 
-        print("Tokenizing prompt and starting generation...")
-        inputs = tokenizer(prompt, return_tensors="pt").to(model.device)
-        inputs= {k: v.to(model.device) for k, v in inputs.items()}
-        
+        inputs = ml_tokenizer(prompt, return_tensors="pt").to(ml_device)
+        inputs = {k: v.to(ml_device) for k, v in inputs.items()}
+
         generation_args = {
             **inputs,
-            "max_new_tokens": 1000,
+            "max_new_tokens": 500,
             "do_sample": False,
             "streamer": streamer,
         }
 
-
         generation_thread = threading.Thread(
-            target=model.generate,
+            target=ml_model.generate,
             kwargs=generation_args,
         )
-        print("Starting generation thread...")
+
         generation_thread.start()
 
-        # https://huggingface.co/blog/aifeifei798/transformers-streaming-output
+        response_text = ""
 
-        print("Streaming output...")
-        print("Streamer is gone!") if streamer is None else None
         for text_token in streamer:
-            print("LLM is currently thinking...")
-            time.sleep(0.01)  # Simulate real-time output with a short delay
             if text_token != "":
-                web_app.new_tokens_queue.put(text_token)
+                response_text += text_token
+            web_app.new_tokens_queue.put(text_token)    
 
-        print("Joining generation thread...")
         generation_thread.join()
 
-    web_app_info_update_thread.join()
+        # Save transcript
+        transcript_out(question, response_text)
 
 
 if __name__ == "__main__":
