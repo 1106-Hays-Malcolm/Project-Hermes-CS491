@@ -1,0 +1,13 @@
+User: what do i do
+
+LLM: To escape the Nautiloid, you need to reach the Helm and take control of the Nautiloid. Here are the steps to do so:
+
+1. Find the Helm: Follow the south-western path that leads outside from the surgery room. You will encounter the githyanki soldier Lae'zel. She will join your party to escape.
+
+2. Defeat the Lesser Imps: As Lae'zel jumps from a ledge to attack, a telepathic connection between her and your character causes her to realize that you are not under mind control. She insists on taking control of the Nautiloid at the Helm. To reach the Helm, you need to defeat three lesser imps.
+
+3. Reach the Helm: Continue north by climbing the arterial meshes. In the centre of the next room are two unconscious victims of the mind flayers. Interact with the control panel adjacent to them. Select "Aggression" and defeat both enemies to receive 10 XP.
+
+4. Defeat Commander Zhalk: In the Helm, a mind flayer fights against Commander Zhalk, a powerful cambion wielding an Everburn Blade. Defeat Zhalk to receive an XP boost and the Everburn Blade.
+
+5. Connect the Transponder: When a party member (excluding Us) nears the console, two lesser imps and a lesser hellsboar appear and attack. If Zhalk and all his infernal allies are defeated, the mind flayer turns on the party after informing them, "You are no longer required." If the cambions arrive while the mind flayer is hostile to the party, the mind flayer may redirect its attention to the cambions. Interact with the console to connect the transponder and cause the ship to warp out of Avernus into the Prime Material Plane.

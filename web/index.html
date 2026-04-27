@@ -1,0 +1,54 @@
+<script>
+    function onSubmit() {
+        const xhttp = new XMLHttpRequest(); 
+        xhttp.open("POST", "/form-submit", true);
+        xhttp.setRequestHeader("Content-type", "application/json");
+
+        var mission_name = document.getElementById("mission-name").value;
+        var question = document.getElementById("question").value;
+
+        xhttp.send(JSON.stringify({"mission-name": mission_name, "question": question}));
+
+        document.getElementById("question").value = "";
+
+        if (question != "") {
+            const newP = document.createElement("p");
+            const llmPre = document.createElement("pre");                     // CHANGE to preserve whitespace in response
+
+            const newContent = document.createTextNode("You: " + question);
+            llmPre.classList.add("llm-response");                             // CHANGE to preserve whitespace in response
+            llmPre.textContent = "Hermes:\n\n";                               // CHANGE to preserve whitespace in response
+
+            document.getElementById("context-container").appendChild(newP);
+            document.getElementById("context-container").appendChild(llmPre); // CHANGE to preserve whitespace in response
+
+            newP.appendChild(newContent);
+        }
+    }
+
+    function updateNeedles(degrees) {
+        var needles = document.getElementsByClassName("compass-needle");
+
+        for (var i = 0; i < needles.length; i++) {
+            needles[i].style.transform = "rotate(" + degrees + "deg)";
+        }
+    }
+
+    // constant compass update call
+    (function(){
+        const xhttp = new XMLHttpRequest(); 
+
+        xhttp.onload = function() {
+            var degrees = parseFloat(this.responseText);
+            console.log("Compass Update: " + degrees);
+
+            updateNeedles(degrees);
+        }
+
+        xhttp.open("GET", "/update-compass");
+        xhttp.send();
+
+        setTimeout(arguments.callee, 1000);
+    })();
+
+</script>

@@ -1,0 +1,16 @@
+User: what do i do
+LLM: To escape the Nautiloid, you need to reach the Helm and take control of the Nautiloid. Here are the steps to do so:
+
+1. Head to the surgery room by entering the door next to the restoration device on the western side of the room at X:24Y:-423.
+2. Interact with the Neural Apparatus in the middle of the room to raise the platform.
+3. On the upper level, you will find a high elf named Myrnath with a removed scalp. Interact with Myrnath and free the intellect devourer named Us.
+4. Follow the south-western path that leads outside to find the githyanki soldier Lae'zel. She will join your party to escape.
+5. Continue north by climbing the arterial meshes to reach the next room.
+6. In the centre of the next room, you will find two unconscious victims of the mind flayers. Interact with the control panel adjacent to them and select "Aggression" to defeat the cultists and gain 10 XP.
+7. Toward the north-east side of the room, you will find Shadowheart trapped in a Mind Flayer pod. Interact with her to initiate the quest Rescue the Illithid's Captive.
+8. Head east to the other Ceremorphosis Chamber to obtain an Eldritch Rune from a corpse on the far east side at X:62Y:-355.
+9. Use the Eldritch Rune to open the pod and recruit Shadowheart or ignore her.
+10. The locked Elaborate Reliquary at X:7Y:-361 can be opened with a Gold Key carried by the dead thrall at X:31Y:-355. Alternatively, the reliquary can be opened with a Sleight of Hand check.
+11. When you enter the Helm, your goal is to reach the transponder on the far west side of the room. A pair of lesser imps and a lesser hellsboar block the path.
+12. Defeat the lesser imps and the lesser hellsboar to reach the transponder.
+13. Interact with the console to connect the transponder

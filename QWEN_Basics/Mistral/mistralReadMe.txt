@@ -1,4 +1,0 @@
-test_mistral.py is only testing the framework and ensuring that it correctly loaded and does the task requested. I haven't setup any metrics yet as any data would be irrelevant without adequate prompting. (The gpu seems to have plenty of room to run this) I will implement a few lines of code in an additional version along with the 8bit and 4bit quantized versions so we can test time, accuracy, gpu usage. Manually put in the prompt to simple questions and the pretrained model can answer correctly. 
-
-Considerations: The gpu can run this with no issue. Definitely slower than the quantized versions. Optimizing for speed without loosing accuracy will be the important part. So if the 8 or 4 bit work well its an easy transition.
- 

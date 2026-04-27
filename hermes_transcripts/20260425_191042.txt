@@ -1,0 +1,12 @@
+User: what do i do?
+LLM: To escape the Nautiloid, you need to reach the Helm and take control of the Nautiloid. To do this, follow these steps:
+
+1. Find the high elf named Myrnath on the upper level of the surgery room. He has an exposed brain that is an intellect devourer.
+2. Free the intellect devourer, which is named Us. It will task you to reach the Helm and take control of the Nautiloid.
+3. Follow the south-western path that leads outside and you will encounter the githyanki soldier Lae'zel. She will join your party to escape.
+4. Continue north by climbing the arterial meshes to reach the next room.
+5. In the centre of the next room, there are two unconscious victims of the mind flayers. Interact with the control panel adjacent to them and select "Aggression" to make them hostile. Defeat both enemies to receive 10 XP.
+6. Toward the north-east side of the room, you will find Shadowheart trapped in a Mind Flayer pod. Interact with her to initiate the quest Rescue the Illithid's Captive. If Shadowheart is selected as an origin character, this pod is empty.
+7. Head east to the other Ceremorphosis Chamber to obtain an Eldritch Rune from a corpse on the far east side. After opening the pod, the party can recruit Shadowheart or ignore her.
+8. Enter the Helm and defeat the three lesser imps and the lesser hellsboar that block the path. A mind flayer fights against Commander Zhalk, a powerful cambion wielding an Everburn Blade.
+9. Defeat Commander Zhalk to take control of the Nautiloid and escape the Hells.

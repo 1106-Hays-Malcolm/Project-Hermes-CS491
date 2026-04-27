@@ -1,0 +1,9 @@
+User: What do I do?
+LLM: 
+1. First, explore the Nursery and interact with the various objects and characters to gather information and loot.
+2. Next, follow the south-western path outside to find Lae'zel, a githyanki soldier who will join your party.
+3. Continue north by climbing the arterial meshes to reach the next room.
+4. In the centre of the next room, free the unconscious victims and defeat the lesser imps to progress.
+5. Toward the north-east side of the room, you will find Shadowheart trapped in a Mind Flayer pod. Free her if possible.
+6. Head to the Helm and defeat Commander Zhalk and his minions to reach the transponder.
+7. Connect the transponder to complete the quest "Escape the Nautiloid".

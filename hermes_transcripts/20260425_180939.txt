@@ -1,0 +1,30 @@
+User: what do i do?
+
+LLM: To escape the Nautiloid, you need to reach the Helm and take control of the Nautiloid. Here are the steps to do so:
+
+1. Head to the surgery room by entering the door next to the restoration device on the western side of the room at X:24Y:-423.
+
+2. Interact with the Neural Apparatus in the middle of the room to raise the platform.
+
+3. On the upper level, you will find a high elf named Myrnath with a removed scalp. Interact with Myrnath and free the intellect devourer named Us.
+
+4. If you free Us, you can ask it about its name, which is Us. It will task you to reach the Helm and take control of the Nautiloid.
+
+5. Exit the surgery room and follow the south-western path that leads outside.
+
+6. You will encounter the githyanki soldier Lae'zel, who will join your party to escape.
+
+7. As Lae'zel jumps from a ledge to attack, a telepathic connection between her and you causes her to realize that you are not under mind control. She insists on taking control of the Nautiloid at the Helm.
+
+8. To reach the Helm, you need to defeat three lesser imps.
+
+9. There is a health restoring device at the northern side of the room at X:-39Y:-376.
+
+10. To reach the next room, continue north by climbing the arterial meshes.
+
+11. In the centre of the next room, you will find two unconscious victims of the mind flayers. Interact with the control panel adjacent to them to defeat the cultists and receive 10 XP.
+
+12. Toward the north-east side of the room, you will find Shadowheart trapped in a Mind Flayer pod. Interacting with Shadowheart initiates the quest Rescue the Illithid's Captive.
+
+13. If you defeat Commander Zhalk on the nautiloid, you will receive an XP boost and the Everburn Blade. It is also possible to obtain the Everburn Blade by casting Command with Shadowheart or another character, forcing Zhalk to drop the weapon.
+

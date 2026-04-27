@@ -1,0 +1,14 @@
+User: first time playing what do i do?
+
+LLM: 
+To start the "Follow the Convoy" quest, you should first find the rendezvous point where the True Souls are waiting for a guide. This is located in the shadow-cursed lands. You will meet a goblin named Rizzle who will tell you to grab a torch and stick to the light as much as possible.
+
+To summon the Drider guide, you will need a special lyre called the Spider's Lyre. This lyre can be obtained by looting it off Minthara's corpse if she is killed or knocked out during Defeat the Goblins, getting it as a gift from Minthara if she is sided with during Raid the Grove, or rescuing Nere during Free True Soul Nere and siding with him.
+
+Once you have the lyre, you can use it to summon the Drider guide Kar'niss. He will be traveling with a group of cultists to Moonrise Towers. You can agree to travel with him, deceive him into handing over his Moonlantern and walking off without it to perish in the Shadow Curse, or attack him outright.
+
+During the trek, a group of Harpers may ambush the convoy. You can choose to betray the convoy and help the Harpers, or fight alongside the convoy in the hopes of being more convincing at Moonrise Towers. If you side with the Harpers, they will take the drider's Moonlantern and refer you to the Last Light Inn. If you stick with the convoy, Kar'niss will safely guide you to the front entrance to Moonrise Towers.
+
+If you have visited the Last Light Inn and avoided making Jaheira hostile at the Inn before siding with the Harpers, they will question you after defeating the convoy and demand "Jaheira's godsend" explain their presence. You can either blame the ambush for ruining their infiltration ( DC16 Persuasion Check) or lie that you were captured by the convoy ( DC16 Deception Check). Failing either will turn the ambushing Harpers hostile (only them). Succeeding either will result in the Harpers handing over the Moonlantern.
+
+If you resolved Marcus' attempt to

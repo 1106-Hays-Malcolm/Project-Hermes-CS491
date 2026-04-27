@@ -1,0 +1,28 @@
+User: what do i do?
+
+LLM: 
+To escape the Nautiloid, you need to reach the Helm and take control of the Nautiloid. Here's a step-by-step guide to help you:
+
+1. Start by exploring the Nursery. You'll find a Mind Flayer "nursery" in the centre of the room. Passing a DC10 Investigation Check reveals that the casing is fragile.
+
+2. South of the nursery, you'll find a body of a mind flayer that can be looted for a random gem.
+
+3. Further south, you'll find a raised path leading to a cartilaginous chest containing random loot.
+
+4. Toward the eastern side of the room, you'll find another raised path leading to an elevated area. Here, you'll find an Onyx and Rune Slate, as well as another cartilaginous chest with loot.
+
+5. To advance to the next room, enter through the door next to the restoration device on the western side of the room.
+
+6. In the surgery room, you'll find a table containing an Illithid Record and a goblin corpse. Interacting with the record imparts images of goblin history and culture.
+
+7. North-west of the table, you'll find three additional rune slates.
+
+8. On the far north side of the room, you'll find an Eldritch Tablet revealing images of Humanoid history.
+
+9. In the middle of the room, you'll find a small elevator leading to an upper level. Interacting with the Neural Apparatus raises the platform. Here, you'll find a high elf named Myrnath with a removed scalp.
+
+10. Interact with Myrnath and free the intellect devourer, Us. It tasks you to reach the Helm and take control of the Nautiloid.
+
+11. Follow the south-western path that leads outside. You'll encounter the githyanki soldier Lae'zel, who joins the party to escape.
+
+12. As Lae'zel jumps from a ledge to attack, a telepathic connection between her and the player character causes

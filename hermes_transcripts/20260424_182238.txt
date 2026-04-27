@@ -1,0 +1,18 @@
+User: im new how do i start
+LLM: To start the quest "Escape the Nautiloid", you need to follow the path from the Nursery to the Helm. Here are the steps:
+
+1. Examine the Nursery: Investigate the mind flayer nursery in the center of the room. Be careful not to touch the pool of larvae, as it will explode. You can find a Restoration device on the western side of the room to heal yourself.
+
+2. Gather loot: Search the bodies of the mind flayers and the cartilaginous chests scattered around the room for random loot.
+
+3. Explore the upper level: Head to the elevated area on the northwest side of the room. You'll find an Onyx and Rune Slate that provides visions of the Nautiloid traveling through the Planes.
+
+4. Enter the surgery room: Go through the door next to the Restoration device on the western side of the room.
+
+5. Free Myrnath: Interact with the high elf named Myrnath on the upper level. If you succeed a DC10 Arcana Check, you'll discover that the exposed brain is an intellect devourer. You can choose to free, abandon, or destroy the brain. If you free the creature, it will ask you to reach the Helm and take control of the Nautiloid.
+
+6. Recruit Lae'zel: Follow the south-western path outside the surgery room to meet the githyanki soldier Lae'zel. She will join your party to escape.
+
+7. Reach the Helm: Head north by climbing the arterial meshes. Defeat three lesser imps to reach the Helm.
+
+8. Connect the transponder: In the Helm, defeat Commander Zhalk and his infernal allies to reach the transponder on the far west side of the room. Connect the transponder to escape the Hells.

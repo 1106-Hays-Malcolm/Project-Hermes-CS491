@@ -1,0 +1,18 @@
+User: what do i do?
+LLM: To escape the Nautiloid, you need to reach the Helm and take control of the Nautiloid. Here are the steps to accomplish this:
+
+1. Find the raised path that leads to an elevated area on the eastern side of the room.
+2. Follow the path until you reach an Onyx and Rune Slate on a table. Interact with the slate to see visions of the Nautiloid travelling through the Planes.
+3. Continue following the path until you reach another cartilaginous chest with loot.
+4. To advance to the next room, enter through the door next to the restoration device on the western side of the room.
+5. In the surgery room, interact with the Neural Apparatus in the middle of the room to raise a platform.
+6. Climb the platform and free the high elf named Myrnath. If you succeed a DC10 Arcana Check, it is revealed that the exposed brain is an intellect devourer.
+7. If you free the intellect devourer, it can be asked about its name, which is Us. The creature tasks the player character to reach the Helm and take control of the Nautiloid.
+8. Exit the surgery room and follow the south-western path that leads outside.
+9. You will encounter the githyanki soldier Lae'zel, who joins the party to escape.
+10. As Lae'zel jumps from a ledge to attack, a telepathic connection between her and the player character causes her to realise that the player character is not under mind control. She insists on taking control of the Nautiloid at the Helm.
+11. To reach the Helm, you need to defeat three lesser imps.
+12. There is a health restoring device at the northern side of the room.
+13. To reach the next room, continue north by climbing the arterial meshes.
+14. In the centre of the next room, there are two unconscious victims of the mind flayers. Interact with the control panel adjacent to them to defeat the cultists and receive 10 XP.
+15. Toward the north-east side of the room, you will find Shadowheart trapped in a Mind Flayer pod

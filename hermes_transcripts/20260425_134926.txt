@@ -1,0 +1,15 @@
+User: what do i do
+
+LLM: To escape the Nautiloid, you need to reach the Helm and take control of the ship. To do this, follow these steps:
+
+1. Find the high elf named Myrnath in the surgery room. He has an exposed brain that is an intellect devourer. Free, abandon, or destroy the brain. If you free it, it will ask you to reach the Helm and take control of the Nautiloid.
+
+2. Exit the surgery room and follow the south-western path that leads outside. You will encounter the githyanki soldier Lae'zel, who will join your party to escape.
+
+3. Continue north by climbing the arterial meshes. In the next room, you will find two unconscious victims of the mind flayers. Defeat the lesser imps and a lesser hellsboar that block your path.
+
+4. Toward the north-east side of the room, you will find Shadowheart trapped in a Mind Flayer pod. If you free her, you can recruit her as a party member.
+
+5. Head to the Helm, where you will find a mind flayer and Commander Zhalk, a powerful cambion wielding an Everburn Blade. Defeat the mind flayer and Commander Zhalk to reach the transponder on the far west side of the room.
+
+6. Connect the nerves of the transponder to escape the Hells.
