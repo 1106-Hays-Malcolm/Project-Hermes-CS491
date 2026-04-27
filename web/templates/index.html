@@ -1,4 +1,3 @@
-```html
 <!doctype HTML>
 
 <html>
@@ -41,69 +40,123 @@
                 <div class="spacing"></div>
                 <div class="compass-parent">
                     <img class="compass" alt="compass" src="{{ url_for('static', filename="hermes_compass_circle.png") }}">
-                    <img class="compass-needle" alt="compass needle" src="{{ url_for('static', filename="hermes_compass_blue_needle.png") }}">
-                    <img class="compass-needle" alt="compass needle" src="{{ url_for('static', filename="hermes_compass_red_needle.png") }}">
+                    <img id="blue-needle" class="compass-needle" alt="compass needle" src="{{ url_for('static', filename="hermes_compass_blue_needle.png") }}">
+                    <img id="red-needle" class="compass-needle" alt="compass needle" src="{{ url_for('static', filename="hermes_compass_red_needle.png") }}">
                 </div>
             </div>
             <div class="yellow-border context-wrapper" id="context-container">
             </div>
+
+            <div class="button-row">
+                <input type="button" value="Calibrate ROI" onclick="calibrateROI()">
+                <input type="button" value="Exit Program" onclick="exitProgram()">
+            </div>
+
         </main>
 
         </div>
 
-        <script>
-            function onSubmit() {
-                const xhttp = new XMLHttpRequest(); 
-                xhttp.open("POST", "/form-submit", true);
-                xhttp.setRequestHeader("Content-type", "application/json");
-                var mission_name = document.getElementById("mission-name").value;
-                var question = document.getElementById("question").value;
+<script>
+    let compassTimer = null;
 
-                if (question != "") {
-                    const newP = document.createElement("p");
-                    const llmPre = document.createElement("pre");                     // CHANGE to preserve whitespace in response
-                    const newContent = document.createTextNode("You: " + question);
-                    llmPre.classList.add("llm-response");                             // CHANGE to preserve whitespace in response
-                    llmPre.textContent = "Hermes:\n\n";                               // CHANGE to preserve whitespace in response
+    window.onload = function() {
+        const container = document.getElementById("context-container");
 
-                    document.getElementById("context-container").appendChild(newP);
-                    document.getElementById("context-container").appendChild(llmPre); // CHANGE to preserve whitespace in response
-                    newP.appendChild(newContent);
+        const msg = document.createElement("pre");
+        msg.classList.add("llm-response");
 
-                    xhttp.onload = function() {
-                        llmPre.textContent += this.responseText;
-                    }
-                }
+        msg.textContent = "System:\n\nTo calibrate the coordinate finder select Calibrate ROI and then click in the center of the coordinates on the player screen.";
 
-                xhttp.send(JSON.stringify({"mission-name": mission_name, "question": question}));
-                // document.getElementById("mission-name").value = "";
-                document.getElementById("question").value = "";
+        container.appendChild(msg);
+    }
+
+    function onSubmit() {
+        stopCompassPolling();
+
+        const xhttp = new XMLHttpRequest(); 
+        xhttp.open("POST", "/form-submit", true);
+        xhttp.setRequestHeader("Content-type", "application/json");
+        var mission_name = document.getElementById("mission-name").value;
+        var question = document.getElementById("question").value;
+
+        if (question != "") {
+            const newP = document.createElement("p");
+            const llmPre = document.createElement("pre");
+            const newContent = document.createTextNode("You: " + question);
+
+            llmPre.classList.add("llm-response");
+            llmPre.textContent = "Hermes:\n\n";
+
+            document.getElementById("context-container").appendChild(newP);
+            document.getElementById("context-container").appendChild(llmPre);
+            newP.appendChild(newContent);
+
+            xhttp.onload = function() {
+                llmPre.textContent += this.responseText;
+
+                startCompassPolling();
+            }
+        }
+
+        xhttp.send(JSON.stringify({"mission-name": mission_name, "question": question}));
+        document.getElementById("question").value = "";
+    }
+
+    function updateNeedles(playerDeg, objectiveDeg) {
+        document.getElementById("blue-needle").style.transform =
+            "rotate(" + playerDeg + "deg)";
+
+        document.getElementById("red-needle").style.transform =
+            "rotate(" + objectiveDeg + "deg)";
+    }
+
+    function pollCompass() {
+        const xhttp = new XMLHttpRequest();
+
+        xhttp.onload = function() {
+            if (this.responseText === "inactive") {
+                return;
             }
 
-            function updateNeedles(degrees) {
-                var needles = document.getElementsByClassName("compass-needle");
+            const data = JSON.parse(this.responseText);
+            updateNeedles(data.player, data.objective);
+        }
 
-                for (var i = 0; i < needles.length; i++) {
-                    needles[i].style.transform = "rotate(" + degrees + "deg)";
-                }
-            }
+        xhttp.open("GET", "/update-compass");
+        xhttp.send();
+    }
 
-            // constant compass update call
-            (function(){
-                const xhttp = new XMLHttpRequest(); 
-                xhttp.onload = function() {
-                    var degrees = parseFloat(this.responseText);
-                    console.log("Compass Update: " + degrees);
+    function startCompassPolling() {
+        if (compassTimer !== null) return;
 
-                    updateNeedles(degrees);
-                }
-                xhttp.open("GET", "/update-compass");
-                xhttp.send();
+        compassTimer = setInterval(pollCompass, 1000);
+    }
 
-                setTimeout(arguments.callee, 1000);
-            })();
+    function stopCompassPolling() {
+        if (compassTimer !== null) {
+            clearInterval(compassTimer);
+            compassTimer = null;
+        }
+    }
 
-        </script>
+    function calibrateROI() {
+        const xhttp = new XMLHttpRequest();
+
+        xhttp.onload = function() {
+            startCompassPolling();
+        }
+
+        xhttp.open("POST", "/calibrate-roi", true);
+        xhttp.send();
+    }
+
+    function exitProgram() {
+        const xhttp = new XMLHttpRequest();
+        xhttp.open("POST", "/shutdown", true);
+        xhttp.send();
+    }
+</script>
+
+
     </body>
 </html>
-```

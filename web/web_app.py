@@ -2,7 +2,10 @@ from flask import Flask
 from flask import request
 from flask import render_template
 import queue
+import os
+import signal
 import state
+from screenshot import calibrate_roi
 
 
 def init():
@@ -38,6 +41,23 @@ def get_form_data():
 
 @app.route("/update-compass", methods=["GET"])
 def update_compass():
-    # Have to return as a string so parse on the other end.
-    degrees = str(state.compass_degrees)
-    return degrees
+    if not state.vision_running:
+        return "inactive"
+
+    return {
+        "player": state.player_azimuth,
+        "objective": state.objective_azimuth
+    }
+
+
+@app.route("/calibrate-roi", methods=["POST"])
+def calibrate_roi_route():
+    calibrate_roi()
+    state.vision_running = True
+    return '', 204
+
+
+@app.route("/shutdown", methods=["POST"])
+def shutdown():
+    os.kill(os.getpid(), signal.SIGINT)
+    return '', 204

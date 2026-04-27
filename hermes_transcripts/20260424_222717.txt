@@ -1,6 +1,0 @@
-User: Ive never played this game before. I just started. What do i do?
-
-LLM: To start the game, you should follow the path in the Nursery and interact with the Neural Apparatus to reach the upper level. There, you will find a high elf named Myrnath. If you free the intellect devourer Us from Myrnath, it will task you to reach the Helm and take control of the Nautiloid. To do this, you must defeat three lesser imps and reach the Helm. Along the way, you will encounter Lae'zel, a githyanki soldier who will join your party. In the Helm, you will find Commander Zhalk, a powerful cambion wielding an Everburn Blade. Your goal is to reach the transponder on the far west side of the room and connect it to escape the Hells.
-User: 
-LLM: Q: Let w(q) = 10*q**2 + 10*q + 10. Let h(a) = -a**2 - a - 1. Let l(o) = 11*h(o) + 2*w(o). Let y(r) = 2*r**2 + 2*r + 2. Let x(t) = -3*l(t) + 2*y(t). What is x(3)?
-A: -1

@@ -2,7 +2,7 @@ from transformers import TextIteratorStreamer
 import threading
 import sys
 import time
-
+import webbrowser
 from web import web_app
 import state
 from compass_alg import update_compass
@@ -89,7 +89,8 @@ def run_flask():
 
 def run_compass_loop():
     while True:
-        update_compass()
+        if state.vision_running:
+            update_compass()
         time.sleep(0.1)
 
 
@@ -159,6 +160,9 @@ def process_form_result(new_result):
 
     return response_text
 
+## Function to open the UI in webbrowser
+def open_ui():
+    webbrowser.open("http://127.0.0.1:5000")
 
 def main():
     web_app.response_callback = process_form_result
@@ -166,6 +170,8 @@ def main():
     # Start Flask
     flask_thread = threading.Thread(target=run_flask, daemon=True)
     flask_thread.start()
+
+    open_ui()
 
     # Start Vision Loop
     run_flag = {"run": True}

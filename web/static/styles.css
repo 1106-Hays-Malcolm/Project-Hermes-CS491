@@ -7,14 +7,15 @@ html {
     margin-left: auto;
     margin-right: auto;
     background-color: #588157;
-    min-block-size: 100%;
     margin-top: 0;
+    padding-bottom: 5px;
 }
 
 body {
     background-color: #1B2A41;
     block-size: 100%;
     margin: 0;
+    
 }
 
 h1 {
@@ -42,11 +43,11 @@ h1 {
     display: flex;
     justify-content: center;
     align-items: center;
-    margin: 5px;
+    margin: 30px;
 }
 
 .form-padding {
-    padding: 10px;
+    padding: 30px;
 }
 
 form {
@@ -55,7 +56,8 @@ form {
 }
 
 main {
-    margin: 10px;
+    margin: 30px;
+    padding: 15px;
 }
 
 h2 {
@@ -69,7 +71,7 @@ p {
 }
 
 .subtitle-wrapper {
-    margin: 5px;
+    margin: 15px;
 }
 
 label {
@@ -111,12 +113,12 @@ label {
 }
 
 .spacing {
-    margin-left: 10px;
-    margin-right: 10px;
+    margin-left: 15px;
+    margin-right: 15px;
 }
 
 .context-wrapper {
-    margin: 30px;
+    margin: 0;
     height: 300px;
     overflow: auto;
 }
@@ -125,4 +127,20 @@ label {
     color: #F0F6F6;
     font-size: 1.1rem;
     font-family: inherit;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
+
+.button-row {
+    display: flex;
+    justify-content: center;
+    gap: 120px;
+    margin-top: 30px;
+    margin-bottom: 15px;
+}
+
+.button-row input {
+    width: 180px;
+    padding: 10px;
+    text-align: center;
 }

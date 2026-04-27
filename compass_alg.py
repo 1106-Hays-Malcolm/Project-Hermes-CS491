@@ -20,7 +20,7 @@ def compute_player_azimuth(last_x, last_y, px, py, prev_azimuth=None):
     if dx == 0 and dy == 0:
         return prev_azimuth if prev_azimuth is not None else 0.0
 
-    azimuth = math.degrees(math.atan2(dy, dx))
+    azimuth = math.degrees(math.atan2(dx, -dy))
     return (azimuth + 360) % 360
 
 
@@ -28,7 +28,7 @@ def compute_goal_azimuth(px, py, gx, gy):
     dx = gx - px
     dy = gy - py
 
-    azimuth = math.degrees(math.atan2(dy, dx))
+    azimuth = math.degrees(math.atan2(dx, -dy))
     return (azimuth + 360) % 360
 
 
@@ -64,8 +64,11 @@ def compass_output(last_x, last_y, px, py, gx, gy, prev_azimuth=None):
     return aligned, objective_azimuth, player_azimuth, prev_azimuth
 
 
-# Update shared compass state using the latest stored coordinates
+# Update shared compass state using the latest stored coordinates compass polling is tied to vision flag
 def update_compass():
+    if not state.vision_running:
+        return
+
     if (
         state.last_x is None or
         state.last_y is None or
@@ -90,6 +93,3 @@ def update_compass():
     state.objective_azimuth = obj_az
     state.player_azimuth = player_az
     state.previous_azimuth = prev_az
-
-    # Use objective azimuth for UI rotation
-    state.compass_degrees = obj_az

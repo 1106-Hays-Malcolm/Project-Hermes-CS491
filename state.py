@@ -15,8 +15,7 @@ objective_y = None
 previous_azimuth = None
 player_azimuth = 0.0
 objective_azimuth = 0.0
-compass_degrees = 90.0
 aligned = False
 
 # Vision loop control
-vision_running = True   
+vision_running = False
