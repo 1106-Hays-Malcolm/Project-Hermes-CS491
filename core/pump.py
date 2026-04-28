@@ -64,7 +64,7 @@ if not hasattr(np, "trapz"):
 
         return _np.sum((y[..., 1:] + y[..., :-1]) * 0.5 * d, axis=axis)
 
-    np.trapz = trapz
+    np.trapz = trapz # type: ignore
 
 # endregion Bootleg FIXES*
 
