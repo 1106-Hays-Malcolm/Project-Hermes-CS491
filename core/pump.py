@@ -46,6 +46,26 @@ from core.metrics import InferenceMetrics, MetricsCollector
 #     return _original_as_dict(self, packed=packed)
 
 # bnb_functional.QuantState.as_dict = _patched_as_dict
+
+import turboquant.core  
+
+import numpy as np
+
+if not hasattr(np, "trapz"):
+    def trapz(y, x=None, dx=1.0, axis=-1):
+        import numpy as _np
+        y = _np.asarray(y)
+
+        if x is None:
+            d = dx
+        else:
+            x = _np.asarray(x)
+            d = _np.diff(x, axis=axis)
+
+        return _np.sum((y[..., 1:] + y[..., :-1]) * 0.5 * d, axis=axis)
+
+    np.trapz = trapz
+
 # endregion Bootleg FIXES*
 
 class _TimedIteratorStreamer(TextIteratorStreamer):
