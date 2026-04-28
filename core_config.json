@@ -6,12 +6,12 @@
   "vision": {
     "roi_left": 500,
     "roi_top": 500,
-    "roi_width": 100,
-    "roi_height": 100,
+    "roi_width": 50,
+    "roi_height": 50,
     "save_screenshot": true,
     "screenshot_path": "screenshot.png",
-    "prompt_template": "Read the coordinates exactly as shown in the image. The text is expected to look like {expected_format} where # are replaced with the numbers/coordinates you see. Return only the text you see. Do not return JSON. Do not explain anything.",
-    "expected_format": "X:# Y:#",
+    "prompt_template": "Read the coordinates exactly as shown in the image. The text is expected to look like {expected_format} where # are replaced with the numbers/coordinates you see. Return only the text you see. Do not return JSON. Do not explain anything. Ensure the values you see are accurate to the what you see in the image. If you do NOT see any coordinate values, simply return 'NO VALUES FOUND'. ",
+    "expected_format": "X:# / Y:#",
     "capture_interval_seconds": 3.0
   },
   "text": {
@@ -38,7 +38,7 @@
       ],
       "max_new_tokens": 128,
       "do_sample": true,
-      "text_uses_processor": false,
+      "text_uses_processor": true,
       "use_turboquant": true,
       "turboquant_bits": 4,
       "load_in_4bit": true,

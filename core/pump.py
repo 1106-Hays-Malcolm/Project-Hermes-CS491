@@ -442,18 +442,21 @@ class ModelPump:
         quantization_config = None
 
         if getattr(config, "load_in_4bit", False):
+            load_kwargs.pop("torch_dtype", None)  # bnb will set this based on its own config
             quantization_config = BitsAndBytesConfig(
                 load_in_4bit=True,
                 bnb_4bit_compute_dtype=torch.float16,
                 bnb_4bit_use_double_quant=True,
                 bnb_4bit_quant_type="nf4", 
-                llm_int8_enable_fp32_cpu_offload=True,
+                # llm_int8_enable_fp32_cpu_offload=True,
             )
+            load_kwargs["device_map"] = {"": device}
 
         elif getattr(config, "load_in_8bit", False):
             quantization_config = BitsAndBytesConfig(
                 load_in_8bit=True,
             )
+            load_kwargs["device_map"] = {"": device}
 
         if quantization_config is not None:
             load_kwargs["quantization_config"] = quantization_config
@@ -478,6 +481,13 @@ class ModelPump:
                 **load_kwargs,
             )
 
+        
+        if hasattr(model.model, 'audio_tower'):
+            model.model._modules.pop('audio_tower', None)
+            # also drop the embedder that bridges it
+            model.model._modules.pop('embed_audio', None)
+            torch.cuda.empty_cache()
+
         if not use_half and quantization_config is None:
             model.to(device)  # type: ignore  # pylance moment
         print(f"[ModelPump:{config.name}] Model loaded.")
@@ -497,6 +507,20 @@ class ModelPump:
             else:
                 print(f"[ModelPump:{config.name}] Loading tokenizer...")
                 tokenizer = AutoTokenizer.from_pretrained(config.model_name)
+
+        print(model.config.quantization_config)
+
+        for name, param in model.named_parameters():
+            print(name, param.dtype)
+            break  # just check the first layer
+
+        print(torch.cuda.memory_allocated())
+
+        for name, param in model.named_parameters():
+            if param.dtype != torch.uint8:
+                print(name, param.dtype)
+
+        print(model)
 
         return cls(
             config=config,
