@@ -9,3 +9,5 @@ pydantic_settings==2.13.1
 Requests==2.33.1
 transformers==5.4.0
 accelerate==1.13.0
+bitsandbytes==0.49.2
+turboquant==0.2.0
