@@ -168,6 +168,9 @@ class CoreAPI:
                 self.vision_pipeline,
                 self.config.pipeline_subscriptions.get("vision"),
             ),
+            "rag": {
+                "available": self.rag is not None,
+            },
         }
 
     # endregion Pipeline Status
