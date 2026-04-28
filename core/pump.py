@@ -18,7 +18,7 @@ from queue import Queue
 from typing import Any, Optional
 
 import torch
-from transformers import AutoModelForCausalLM, AutoProcessor, AutoTokenizer, PreTrainedTokenizerBase, ProcessorMixin, TextIteratorStreamer
+from transformers import AutoModelForCausalLM, AutoModelForImageTextToText, AutoProcessor, AutoTokenizer, PreTrainedTokenizerBase, ProcessorMixin, TextIteratorStreamer
 
 # turboquant shit
 from turboquant import TurboQuantCache
@@ -457,15 +457,29 @@ class ModelPump:
 
         if quantization_config is not None:
             load_kwargs["quantization_config"] = quantization_config
-        
-        model = AutoModelForCausalLM.from_pretrained(
-            config.model_name,
-            **load_kwargs,
-        )
+
+        # Vision-capable pumps apparently need AutoModelForImageTextToText so the vision tower is actually loaded? 
+        if PumpCapability.VISION in capabilities:
+            print(f"[ModelPump:{config.name}] Vision capability detected — using AutoModelForImageTextToText.")
+            try:
+                model = AutoModelForImageTextToText.from_pretrained(
+                    config.model_name,
+                    **load_kwargs,
+                )
+            except Exception as e:
+                print(f"[ModelPump:{config.name}] AutoModelForImageTextToText failed ({e}), falling back to AutoModelForCausalLM.")
+                model = AutoModelForCausalLM.from_pretrained(
+                    config.model_name,
+                    **load_kwargs,
+                )
+        else:
+            model = AutoModelForCausalLM.from_pretrained(
+                config.model_name,
+                **load_kwargs,
+            )
 
         if not use_half and quantization_config is None:
-            model.to(device)    # type: ignore
-                                # ^^^ yet ANOTHER unsatisfiable pylance thing
+            model.to(device)  # type: ignore  # pylance moment
         print(f"[ModelPump:{config.name}] Model loaded.")
 
         tokenizer: Optional[Any] = None
