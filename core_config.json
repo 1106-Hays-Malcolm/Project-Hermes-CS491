@@ -11,7 +11,8 @@
     "save_screenshot": false,
     "screenshot_path": "screenshot.png",
     "prompt_template": "Read the text exactly as shown in the image. The text is expected to look like {expected_format}. Return only the text you see. Do not return JSON. Do not explain anything.",
-    "expected_format": "X:51 Y:-697"
+    "expected_format": "X:51 Y:-697",
+    "capture_interval_seconds": 3.0
   },
   "text": {
     "prompt_template": "{rag_context}\nCurrent map: {selected_map}\nUser query: {user_text}"
@@ -28,11 +29,12 @@
   },
   "pumps": [
     {
-      "name": "text_pump",
+      "name": "gemma_pump",
       "model_name": "google/gemma-4-E2B-it",
       "device": "cuda",
       "capabilities": [
-        "text"
+        "text",
+        "vision"
       ],
       "max_new_tokens": 128,
       "do_sample": true,
@@ -44,6 +46,7 @@
     }
   ],
   "pipeline_subscriptions": {
-    "text": "text_pump"
+    "text": "gemma_pump",
+    "vision": "gemma_pump"
   }
 }

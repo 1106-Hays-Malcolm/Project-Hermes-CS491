@@ -100,6 +100,18 @@ def process_user_input(new_result: dict) -> None:
         "".join(full_response),
     )
 
+def run_vision_loop() -> None:
+    core_api.session.start_visual_loop()
+    while True:
+        if core_api.is_visual_loop_active():
+            try:
+                coords = core_api.capture_coordinates()
+                print(f"[VisionLoop] Captured coordinates: {coords}")
+                # web_app.latest_coords = coords # TODO: add this junk later
+            except Exception as e:
+                print(f"[VisionLoop] Error: {e}")
+        time.sleep(core_api.config.vision.capture_interval_seconds)
+
 
 def main() -> None:
     """Starts the application and coordinates background workers.
@@ -123,6 +135,14 @@ def main() -> None:
         daemon=True,
     )
     compass_thread.start()
+
+    vision_thread = threading.Thread(
+        target=run_vision_loop,
+        daemon=True,
+    )
+    vision_thread.start()
+
+    core_api.session.start_visual_loop()
 
     try:
         while True:
