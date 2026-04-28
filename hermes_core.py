@@ -54,11 +54,11 @@ def update_compass() -> None:
     The compass value cycles from 0 to 360 degrees over a fixed period
     and is written directly to the shared web_app state.
     """
-    start_time = time.time()
+    # start_time = time.time()
 
     while True:
-        elapsed = time.time() - start_time
-        web_app.compass_degrees = (elapsed % 60.0) / 60.0 * 360.0
+        # elapsed = time.time() - start_time
+        # web_app.compass_degrees = (elapsed % 60.0) / 60.0 * 360.0
         time.sleep(1)
 
 
@@ -107,6 +107,18 @@ def run_vision_loop() -> None:
             try:
                 coords = core_api.capture_coordinates()
                 print(f"[VisionLoop] Captured coordinates: {coords}")
+                # parse from X:51 Y:-697 to {51, -697}
+                if not coords or "X:" not in coords or "Y:" not in coords:
+                    raise ValueError(f"Malformed coords: {coords}")
+                parts = coords.replace("X:", "").replace("Y:", "").split()
+                if len(parts) != 2:
+                    raise ValueError(f"Bad coord format: {coords}")
+                x, y = map(int, parts)
+                if (abs(x) + abs(y)) == 0:
+                    print("[VisionLoop] Skipping (0,0)")
+                    continue
+                # for now angle from {0,0} to {x,y}
+                web_app.compass_degrees = ((180 + (180 / 3.14159) * -1 * (3.14159 / 2 - (3.14159 + (3.14159 / 2) - (3.14159 / 2 + (3.14159 / 2) * (y / (abs(x) + abs(y))) if y != 0 else 0) + (3.14159 / 2) * (x / (abs(x) + abs(y))) if x != 0 else 0)))) % 360
                 # web_app.latest_coords = coords # TODO: add this junk later
             except Exception as e:
                 print(f"[VisionLoop] Error: {e}")
