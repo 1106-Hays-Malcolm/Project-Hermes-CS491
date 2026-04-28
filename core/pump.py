@@ -36,16 +36,16 @@ from core.metrics import InferenceMetrics, MetricsCollector
 #   RuntimeError: Tensor.item() cannot be called on meta tensors
 # We guard the offset access so it skips gracefully on meta tensors.
 # region Bootleg FIXES*
-import bitsandbytes.functional as bnb_functional
+# import bitsandbytes.functional as bnb_functional
 
-_original_as_dict = bnb_functional.QuantState.as_dict
+# _original_as_dict = bnb_functional.QuantState.as_dict
 
-def _patched_as_dict(self, packed=False):
-    if self.offset is not None and self.offset.device.type == "meta":
-        return {}
-    return _original_as_dict(self, packed=packed)
+# def _patched_as_dict(self, packed=False):
+#     if self.offset is not None and self.offset.device.type == "meta":
+#         return {}
+#     return _original_as_dict(self, packed=packed)
 
-bnb_functional.QuantState.as_dict = _patched_as_dict
+# bnb_functional.QuantState.as_dict = _patched_as_dict
 # endregion Bootleg FIXES*
 
 class _TimedIteratorStreamer(TextIteratorStreamer):
