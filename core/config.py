@@ -261,9 +261,14 @@ class ModelPumpConfig(BaseModel):
     max_new_tokens: int = 1000
     do_sample: bool = False
     text_uses_processor: bool = False
+
     # TurboQUANNTTT
     use_turboquant: bool = True
     turboquant_bits: int = 2
+
+    # Model Quantization
+    load_in_4bit: bool = True
+    load_in_8bit: bool = False
 
 # endregion ModelPumpConfig
 

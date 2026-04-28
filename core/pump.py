@@ -22,10 +22,30 @@ from transformers import AutoModelForCausalLM, AutoProcessor, AutoTokenizer, Pre
 # turboquant shit
 from turboquant import TurboQuantCache
 
+# quantization 
+from transformers import BitsAndBytesConfig
+
 from core.config import ModelPumpConfig
 from core.metrics import InferenceMetrics, MetricsCollector
 
-# region Performance Profiling
+
+# Monkey-patch for bitsandbytes + accelerate meta tensor incompatibility.
+# quant_state.as_dict() calls .item() on tensors that may still be on the
+# meta device during accelerate's dispatch phase, causing:
+#   RuntimeError: Tensor.item() cannot be called on meta tensors
+# We guard the offset access so it skips gracefully on meta tensors.
+# region Bootleg Fix
+import bitsandbytes.functional as bnb_functional
+
+_original_as_dict = bnb_functional.QuantState.as_dict
+
+def _patched_as_dict(self, packed=False):
+    if self.offset is not None and self.offset.device.type == "meta":
+        return {}
+    return _original_as_dict(self, packed=packed)
+
+bnb_functional.QuantState.as_dict = _patched_as_dict
+# endregion Bootleg Fix
 
 class _TimedIteratorStreamer(TextIteratorStreamer):
     """TextIteratorStreamer that records the time of the first decoded token.
@@ -45,8 +65,6 @@ class _TimedIteratorStreamer(TextIteratorStreamer):
             self.first_token_time = time.monotonic()    # Turns out "monotonic" is better for performance measurement
             self._first_seen = True                     # Apparently doing plain time.time is affected by system clock adjustments
         super().on_finalized_text(text, stream_end)
-
-# endregion Performance Profiling
 
 @dataclass
 class _PumpJob:
@@ -382,14 +400,39 @@ class ModelPump:
 
         print(f"[ModelPump:{config.name}] Loading model '{config.model_name}' on {device}...")
 
-    
+        load_kwargs = {}
+
+        if use_half:
+            load_kwargs["dtype"] = torch.float16
+            load_kwargs["device_map"] = "auto"
+        else: 
+            load_kwargs["dtype"] = torch.float32
+
+        quantization_config = None
+
+        if getattr(config, "load_in_4bit", False):
+            quantization_config = BitsAndBytesConfig(
+                load_in_4bit=True,
+                bnb_4bit_compute_dtype=torch.float16,
+                bnb_4bit_use_double_quant=True,
+                bnb_4bit_quant_type="nf4", 
+                llm_int8_enable_fp32_cpu_offload=True,
+            )
+
+        elif getattr(config, "load_in_8bit", False):
+            quantization_config = BitsAndBytesConfig(
+                load_in_8bit=True,
+            )
+
+        if quantization_config is not None:
+            load_kwargs["quantization_config"] = quantization_config
+        
         model = AutoModelForCausalLM.from_pretrained(
             config.model_name,
-            torch_dtype=torch.float16 if use_half else torch.float32,
-            device_map="auto" if use_half else None,
+            **load_kwargs,
         )
 
-        if not use_half:
+        if not use_half and quantization_config is None:
             model.to(device)    # type: ignore
                                 # ^^^ yet ANOTHER unsatisfiable pylance thing
         print(f"[ModelPump:{config.name}] Model loaded.")
