@@ -9,6 +9,46 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 MASTER_CONFIG_PATH = "core_config.json"
 
 
+# region Helpers
+
+def _load_or_create(path: str, default_data: dict) -> dict:
+    """Loads JSON if it exists, otherwise creates it with defaults.
+
+    Args:
+        path: File path.
+        default_data: Data to write if file is missing.
+
+    Returns:
+        dict: Loaded or default data.
+    """
+    if not os.path.exists(path):
+        with open(path, "w", encoding="utf-8") as f:
+            json.dump(default_data, f, indent=2)
+        return default_data
+
+    with open(path, encoding="utf-8") as f:
+        return json.load(f)
+
+
+def _save(config: BaseSettings, path: str) -> None:
+    """Writes a config object's JSON representation to disk.
+
+    Args:
+        config: Config object to save.
+        path: Output JSON file path.
+    """
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(
+            config.model_dump(mode="json"),
+            f,
+            indent=2,
+        )
+
+# endregion Helpers
+
+
+# region VisionConfig
+
 class VisionConfig(BaseSettings):
     """Configuration for the vision pipeline.
 
@@ -65,11 +105,11 @@ class VisionConfig(BaseSettings):
         if _data:
             return cls(**_data)
 
-        if not os.path.exists(path):
-            return cls()
-
-        with open(path, encoding="utf-8") as f:
-            return cls(**json.load(f))
+        data = _load_or_create(
+            path,
+            cls().model_dump(mode="json"),
+        )
+        return cls(**data)
 
     def save(self, path: str = "vision_config.json") -> None:
         """Saves the vision config to a JSON file.
@@ -79,6 +119,10 @@ class VisionConfig(BaseSettings):
         """
         _save(self, path)
 
+# endregion VisionConfig
+
+
+# region TextConfig
 
 class TextConfig(BaseSettings):
     """Configuration for the text pipeline.
@@ -119,11 +163,11 @@ class TextConfig(BaseSettings):
         if _data:
             return cls(**_data)
 
-        if not os.path.exists(path):
-            return cls()
-
-        with open(path, encoding="utf-8") as f:
-            return cls(**json.load(f))
+        data = _load_or_create(
+            path,
+            cls().model_dump(mode="json"),
+        )
+        return cls(**data)
 
     def save(self, path: str = "text_config.json") -> None:
         """Saves the text config to a JSON file.
@@ -133,6 +177,10 @@ class TextConfig(BaseSettings):
         """
         _save(self, path)
 
+# endregion TextConfig
+
+
+# region TranscriptConfig
 
 class TranscriptConfig(BaseSettings):
     """Configuration for transcript logging.
@@ -172,11 +220,11 @@ class TranscriptConfig(BaseSettings):
         if _data:
             return cls(**_data)
 
-        if not os.path.exists(path):
-            return cls()
-
-        with open(path, encoding="utf-8") as f:
-            return cls(**json.load(f))
+        data = _load_or_create(
+            path,
+            cls().model_dump(mode="json"),
+        )
+        return cls(**data)
 
     def save(self, path: str = "transcript_config.json") -> None:
         """Saves the transcript config to a JSON file.
@@ -186,6 +234,10 @@ class TranscriptConfig(BaseSettings):
         """
         _save(self, path)
 
+# endregion TranscriptConfig
+
+
+# region ModelPumpConfig
 
 class ModelPumpConfig(BaseModel):
     """Configuration for a single model pump.
@@ -208,6 +260,10 @@ class ModelPumpConfig(BaseModel):
     do_sample: bool = False
     text_uses_processor: bool = False
 
+# endregion ModelPumpConfig
+
+
+# region MetricsConfig
 
 class MetricsConfig(BaseModel):
     """Configuration for inference metrics collection.
@@ -220,6 +276,10 @@ class MetricsConfig(BaseModel):
     enabled: bool = False
     output_path: str = "hermes_metrics.jsonl"
 
+# endregion MetricsConfig
+
+
+# region CoreConfig
 
 class CoreConfig(BaseSettings):
     """Root configuration for the core pipeline.
@@ -384,17 +444,4 @@ class CoreConfig(BaseSettings):
         with open(path, "w", encoding="utf-8") as f:
             json.dump(data, f, indent=2)
 
-
-def _save(config: BaseSettings, path: str) -> None:
-    """Writes a config object's JSON representation to disk.
-
-    Args:
-        config: Config object to save.
-        path: Output JSON file path.
-    """
-    with open(path, "w", encoding="utf-8") as f:
-        json.dump(
-            config.model_dump(mode="json"),
-            f,
-            indent=2,
-        )
+# endregion CoreConfig
