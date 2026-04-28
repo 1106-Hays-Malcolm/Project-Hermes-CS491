@@ -141,6 +141,7 @@ class TextConfig(BaseSettings):
     )
 
     prompt_template: str = (
+        "{rag_context}"
         "Current map: {selected_map}\n"
         "User query: {user_text}"
     )
@@ -258,13 +259,13 @@ class ModelPumpConfig(BaseModel):
     model_name: str
     device: str = "cpu"
     capabilities: list[str] = ["text"]
-    max_new_tokens: int = 1000
+    max_new_tokens: int = 256
     do_sample: bool = False
     text_uses_processor: bool = False
 
     # TurboQUANNTTT
-    use_turboquant: bool = True
-    turboquant_bits: int = 2
+    use_turboquant: bool = False
+    turboquant_bits: int = 4
 
     # Model Quantization
     load_in_4bit: bool = True
@@ -365,6 +366,7 @@ class CoreConfig(BaseSettings):
         default = cls()
 
         if not os.path.exists(path):
+            default.save(path)
             return default
 
         with open(path, encoding="utf-8") as f:
@@ -398,7 +400,7 @@ class CoreConfig(BaseSettings):
             {},
         )
 
-        return cls(
+        instance = cls(
             vision=vision,
             text=text,
             transcript=transcript,
@@ -423,6 +425,9 @@ class CoreConfig(BaseSettings):
                 default.rag_config_path,
             ),
         )
+
+        instance.save(path)
+        return instance
 
     def save(self, path: str = MASTER_CONFIG_PATH) -> None:
         """Saves the full resolved core configuration.

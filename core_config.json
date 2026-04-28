@@ -14,7 +14,7 @@
     "expected_format": "X:51 Y:-697"
   },
   "text": {
-    "prompt_template": "Current map: {selected_map}\nUser query: {user_text}"
+    "prompt_template": "{rag_context}\nCurrent map: {selected_map}\nUser query: {user_text}"
   },
   "transcript": {
     "directory": "hermes_transcripts",
@@ -34,9 +34,13 @@
       "capabilities": [
         "text"
       ],
-      "max_new_tokens": 256,
+      "max_new_tokens": 128,
       "do_sample": true,
-      "text_uses_processor": false
+      "text_uses_processor": false,
+      "use_turboquant": true,
+      "turboquant_bits": 4,
+      "load_in_4bit": true,
+      "load_in_8bit": false
     }
   ],
   "pipeline_subscriptions": {

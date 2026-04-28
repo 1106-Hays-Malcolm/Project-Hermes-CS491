@@ -9,6 +9,7 @@ from core.pipelines.text import TextPipeline
 from core.transcript import TranscriptManager
 from core.pipelines.vision import VisionPipeline
 
+from RAG.rag.rag_api import RAGAPI
 
 @dataclass
 class CoreAPI:
@@ -35,6 +36,7 @@ class CoreAPI:
     vision_pipeline: Optional[VisionPipeline]
     transcript_manager: TranscriptManager
     metrics_collector: MetricsCollector
+    rag: Optional[RAGAPI] = None
 
     @classmethod
     def create(
@@ -75,6 +77,18 @@ class CoreAPI:
             for p in config.pumps
         }
 
+        # RAG is initialized once, then passed into TextPipeline below
+        rag: Optional[RAGAPI] = None
+        if config.rag is not None:
+            try:
+                rag = RAGAPI(
+                    persist_dir=config.rag.chroma.persist_dir,
+                    config=config.rag,
+                )
+                print("[CoreAPI] RAG loaded.")
+            except Exception as e:
+                print(f"[CoreAPI] RAG failed to load, continuing without it: {e}")
+
         text_pipeline: Optional[TextPipeline] = None
         text_pump_name = config.pipeline_subscriptions.get("text")
         if text_pump_name:
@@ -83,6 +97,7 @@ class CoreAPI:
             text_pipeline = TextPipeline(
                 config=config.text,
                 pump=text_pump,
+                rag=rag,  # None if RAG isn't configured, TextPipeline handles that
             )
 
         vision_pipeline: Optional[VisionPipeline] = None
@@ -106,6 +121,7 @@ class CoreAPI:
             vision_pipeline=vision_pipeline,
             transcript_manager=transcript_manager,
             metrics_collector=metrics_collector,
+            rag=rag
         )
 
     # region Pipeline Status

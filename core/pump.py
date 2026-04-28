@@ -19,6 +19,7 @@ from typing import Any, Optional
 
 import torch
 from transformers import AutoModelForCausalLM, AutoProcessor, AutoTokenizer, PreTrainedTokenizerBase, ProcessorMixin, TextIteratorStreamer
+
 # turboquant shit
 from turboquant import TurboQuantCache
 
@@ -34,7 +35,7 @@ from core.metrics import InferenceMetrics, MetricsCollector
 # meta device during accelerate's dispatch phase, causing:
 #   RuntimeError: Tensor.item() cannot be called on meta tensors
 # We guard the offset access so it skips gracefully on meta tensors.
-# region Bootleg Fix
+# region Bootleg FIXES*
 import bitsandbytes.functional as bnb_functional
 
 _original_as_dict = bnb_functional.QuantState.as_dict
@@ -45,7 +46,7 @@ def _patched_as_dict(self, packed=False):
     return _original_as_dict(self, packed=packed)
 
 bnb_functional.QuantState.as_dict = _patched_as_dict
-# endregion Bootleg Fix
+# endregion Bootleg FIXES*
 
 class _TimedIteratorStreamer(TextIteratorStreamer):
     """TextIteratorStreamer that records the time of the first decoded token.
@@ -239,9 +240,9 @@ class ModelPump:
             try:
                 self._process_job(job)
             except Exception as e:
-                # Surface errors to blocking callers; streaming callers will
-                # eventually unblock via the streamer timeout set at creation.
-                # TODO: propagate errors to streaming callers explicitly.
+                print(f"[Pump:{self.config.name}] Worker error: {e}")
+                import traceback
+                traceback.print_exc()
                 if job.result_event is not None:
                     job.result_holder.append(e)
                     job.result_event.set()
@@ -259,7 +260,17 @@ class ModelPump:
         # another assertion to satisfy Pylance's cruel eyes
         assert self._tokenizer is not None
 
-        inputs = self._tokenizer(job.prompt, return_tensors="pt")
+        # gemma 4 really wants this for some reason??? 
+        messages = [{"role": "user", "content": job.prompt}]
+
+        try:
+            formatted = self._tokenizer.apply_chat_template(
+                messages, tokenize=False, add_generation_prompt=True
+            )
+        except Exception:
+            formatted = job.prompt
+
+        inputs = self._tokenizer(formatted, return_tensors="pt")
         inputs = {k: v.to(self.config.device) for k, v in inputs.items()}
         prompt_tokens = inputs["input_ids"].shape[1]
 
@@ -403,10 +414,10 @@ class ModelPump:
         load_kwargs = {}
 
         if use_half:
-            load_kwargs["dtype"] = torch.float16
-            load_kwargs["device_map"] = "auto"
+            load_kwargs["torch_dtype"] = torch.float16
+            # load_kwargs["device_map"] = "auto"
         else: 
-            load_kwargs["dtype"] = torch.float32
+            load_kwargs["torch_dtype"] = torch.float32
 
         quantization_config = None
 

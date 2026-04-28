@@ -3,6 +3,7 @@ import time
 
 from Flask_App import web_app
 from core.core_api import CoreAPI
+from RAG.rag.rag_api import RAGAPI
 
 # region Config Bootstrap
 
@@ -73,20 +74,27 @@ def process_user_input(new_result: dict) -> None:
             user input data. Expected key: "question".
     """
     question = new_result.get("question", "")
+    print(f"[Debug] Question: {question}")
 
     if core_api.session.selected_map is None:
         core_api.set_map("Act One")
 
+    print(f"[Debug] Selected map: {core_api.session.selected_map}")
+    print(f"[Debug] Text pipeline: {core_api.text_pipeline}")
+
     streamer = core_api.query_text_model(question)
+    print(f"[Debug] Streamer: {streamer}")
 
     full_response: list[str] = []
 
     for token in streamer:
+        print(f"[Debug] Token: {repr(token)}")
         if token:
             web_app.new_tokens_queue.put(token)
             full_response.append(token)
             time.sleep(0.005)
 
+    print(f"[Debug] Full response: {''.join(full_response)}")
     core_api.log_transcript(
         question,
         "".join(full_response),
