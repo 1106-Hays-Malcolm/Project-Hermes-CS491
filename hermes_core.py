@@ -2,7 +2,7 @@ import threading
 import time
 
 import torch
-from transformers import AutoModelForCausalLM, AutoTokenizer
+from transformers import AutoModelForCausalLM, AutoTokenizer, PreTrainedModel
 
 from Flask_App import web_app
 from core.core_api import CoreAPI
@@ -34,6 +34,7 @@ text_model = AutoModelForCausalLM.from_pretrained(
 )
 
 if device == "cpu":
+    # Pylance WILL just eternally complain about this but it doesn't break anything :p
     text_model.to(device)
 
 print("Model loaded")
@@ -67,12 +68,19 @@ def process_user_input(new_result: dict) -> None:
     if core_api.session.selected_map is None:
         core_api.set_map("Act One")
 
-    response_text = core_api.query_text_model(question)
-    core_api.log_transcript(question, response_text)
+    streamer, generation_thread = core_api.text_pipeline.stream_infer(
+        question, core_api.session.selected_map
+    )
 
-    for token in response_text:
-        web_app.new_tokens_queue.put(token)
-        time.sleep(0.005)
+    full_response = []
+    for token in streamer:
+        if token:
+            web_app.new_tokens_queue.put(token)
+            full_response.append(token)
+            time.sleep(0.005)
+
+    generation_thread.join()
+    core_api.log_transcript(question, "".join(full_response))
 
 
 # Legacy Hermes pipeline snippets from For_Git/hermes_v1.py.
@@ -150,6 +158,7 @@ def main() -> None:
 
     compass_thread = threading.Thread(target=update_compass, daemon=True)
     compass_thread.start()
+
 
     while True:
         print("Awaiting user input...")
