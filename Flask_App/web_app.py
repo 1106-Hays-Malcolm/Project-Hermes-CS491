@@ -1,12 +1,13 @@
 from flask import Flask
 from flask import request
 from flask import render_template
+import logging
 import queue
 
 
 def init():
     global app
-    global result_queue
+    global result_queue2
     global new_tokens_queue
     global compass_degrees
     compass_degrees = 90.
@@ -16,6 +17,8 @@ app = Flask(__name__)
 result_queue = queue.Queue()
 new_tokens_queue = queue.Queue()
 
+log = logging.getLogger('werkzeug')
+log.setLevel(logging.WARNING)
 
 @app.route("/", methods=["GET"])
 def hello_world():
