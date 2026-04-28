@@ -61,6 +61,7 @@ class VisionConfig(BaseSettings):
         screenshot_path: str - output path for saved screenshots.
         prompt_template: str - prompt template for vision inference.
         expected_format: str - example expected OCR output format.
+        capture_interval_seconds: float - delay between captures in seconds.
     """
 
     model_config = SettingsConfigDict(
@@ -86,6 +87,7 @@ class VisionConfig(BaseSettings):
     )
 
     expected_format: str = "X:51 Y:-697"
+    capture_interval_seconds: float = 3.0
 
     @classmethod
     def load(
