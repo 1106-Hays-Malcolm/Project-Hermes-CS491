@@ -1,14 +1,13 @@
 from dataclasses import dataclass
 from typing import Optional
 
-from core.capabilities import PumpCapability
 from core.config import CoreConfig
 from core.metrics import MetricsCollector
-from core.pump import ModelPump, _TimedIteratorStreamer
+from core.pump import ModelPump, _TimedIteratorStreamer, PumpCapability
 from core.session import SessionState
-from core.text import TextPipeline
+from core.pipelines.text import TextPipeline
 from core.transcript import TranscriptManager
-from core.vision import VisionPipeline
+from core.pipelines.vision import VisionPipeline
 
 
 @dataclass
@@ -158,17 +157,17 @@ class CoreAPI:
     # endregion Pipeline Status
 
     def set_map(self, selected_map: str) -> None:
-        """Sets the active map context for the session.
+        """Sets the active map context for the current session.
 
         Args:
-            selected_map: The selected map name.
+            selected_map: Map identifier or description string.
         """
         self.session.set_selected_map(selected_map)
 
     # region Inference Methods 
 
     def capture_coordinates(self) -> str:
-        """Captures the configured ROI and returns the vision model output.
+        """Captures the configured region and runs vision inference.
 
         Returns:
             str: Model output text.
@@ -193,8 +192,8 @@ class CoreAPI:
         """Submits a text query and returns a streaming response.
 
         Args:
-            user_text: The user's query text.
-            selected_map: Optional map context to set before querying.
+            user_text: User query string.
+            selected_map: Optional map context override.
 
         Returns:
             _TimedIteratorStreamer: Iterable token stream.
@@ -225,11 +224,11 @@ class CoreAPI:
     # region Transcripting
 
     def log_transcript(self, user_text: str, model_text: str) -> None:
-        """Writes a user/model pair to the transcript file.
+        """Writes a user/model interaction to the transcript log.
 
         Args:
-            user_text: The user's input text.
-            model_text: The model response text.
+            user_text: Input text from the user.
+            model_text: Output text from the model.
         """
         self.transcript_manager.write(user_text, model_text)
 
@@ -238,11 +237,11 @@ class CoreAPI:
     # region Vision Control Loop
 
     def pause_visual_loop(self) -> None:
-        """Pauses the vision loop state."""
+        """Pauses the vision loop."""
         self.session.pause_visual_loop()
 
     def resume_visual_loop(self) -> None:
-        """Resumes the vision loop state."""
+        """Resumes the vision loop."""
         self.session.resume_visual_loop()
 
     def is_visual_loop_active(self) -> bool:
