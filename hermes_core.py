@@ -62,7 +62,11 @@ def update_compass() -> None:
 
 
 def process_user_input(new_result: dict) -> None:
-    """Processes a single user input payload from the Flask queue."""
+    """Processes a single user input payload from the Flask queue.
+
+    Args:
+        new_result (dict): The user input payload containing at least a "question" key with the user's query string.
+    """    
     question = new_result.get("question", "")
 
     if core_api.session.selected_map is None:
