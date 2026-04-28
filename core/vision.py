@@ -1,45 +1,53 @@
 from dataclasses import dataclass
 from typing import Any, Optional
 
-import torch
 from PIL import Image
 from mss import mss
 
 from core.config import VisionConfig
+from core.pump import ModelPump
 
 
 @dataclass
 class VisionPipeline:
-    """Pipeline for screen capture and vision model inference.
+    """Pipeline responsible for screen capture, prompt construction, and inference.
+
+    This class owns screen capture and prompt-building logic. All model execution
+    is delegated to the subscribed ModelPump instance.
+
+    The conversation wrapper applied around the prompt (e.g. chat templates)
+    is model-specific and handled internally by the pump.
 
     Attributes:
-        config: VisionConfig - configuration for capture and screenshot behavior.
-        model: Optional[object] - vision model instance, if loaded externally.
-        processor: Optional[object] - processor for preparing model inputs.
-        device: Optional[str] - device identifier used for inference.
+        config: VisionConfig - configuration for capture and prompt formatting.
+        pump: ModelPump - pump responsible for model execution.
     """
 
     config: VisionConfig
-    model: Optional[Any] = None
-    processor: Optional[Any] = None
-    device: Optional[str] = None
+    pump: ModelPump
 
     def capture_region(self) -> Image.Image:
-        """Captures a screen region defined by the vision config.
+        """Captures a screen region defined in the configuration.
+
+        The capture region is defined by ROI (region of interest) fields in
+        VisionConfig. Optionally saves the captured image if enabled.
 
         Returns:
-            Image.Image: The captured screenshot image.
+            Image.Image: Captured screenshot as a PIL image.
         """
         with mss() as screen_capture:
-            shot = screen_capture.grab(
-                {
-                    "left": self.config.roi_left,
-                    "top": self.config.roi_top,
-                    "width": self.config.roi_width,
-                    "height": self.config.roi_height,
-                }
+            shot = screen_capture.grab({
+                "left": self.config.roi_left,
+                "top": self.config.roi_top,
+                "width": self.config.roi_width,
+                "height": self.config.roi_height,
+            })
+
+            image = Image.frombytes(
+                "RGB",
+                shot.size,
+                shot.rgb,
             )
-            image = Image.frombytes("RGB", shot.size, shot.rgb)
 
         if self.config.save_screenshot:
             image.save(self.config.screenshot_path)
@@ -47,71 +55,37 @@ class VisionPipeline:
         return image
 
     def build_prompt(self) -> str:
-        """Builds the structured prompt for the vision model.
+        """Constructs the vision prompt from the configured template.
+
+        The template is defined in VisionConfig and may include:
+            {expected_format}
+
+        The surrounding conversation structure (chat template) is handled
+        internally by the ModelPump.
 
         Returns:
-            str: The prompt used to query the vision model.
+            str: Formatted prompt string.
         """
-        return (
-            "Read the text exactly as shown in the image. "
-            "The text is expected to look like X:51 Y:-697. "
-            "Return only the text you see. "
-            "Do not return JSON. "
-            "Do not explain anything."
+        return self.config.prompt_template.format(
+            expected_format=self.config.expected_format,
         )
 
     def infer_text(self, image: Image.Image) -> str:
-        """Runs the vision model on a captured image and returns the generated text.
+        """Submits a blocking vision inference job to the pump.
+
+        This method builds the prompt and delegates execution to the pump.
+        The pump handles model interaction and synchronization.
 
         Args:
-            image: The image to run through the vision model.
+            image: Input image to process.
 
         Returns:
-            str: The model output text.
-
-        Raises:
-            RuntimeError: If the model or processor has not been initialized.
+            str: Decoded model output text.
         """
-        if self.model is None or self.processor is None:
-            raise RuntimeError("VisionPipeline requires a loaded model and processor.")
+        prompt = self.build_prompt()
 
-        conversation = [
-            {
-                "role": "user",
-                "content": [
-                    {"type": "image"},
-                    {"type": "text", "text": self.build_prompt()},
-                ],
-            }
-        ]
-
-        text_prompt = self.processor.apply_chat_template(
-            conversation,
-            tokenize=False,
-            add_generation_prompt=True,
+        return self.pump.submit_vision_blocking(
+            image,
+            prompt,
+            pipeline_type="vision",
         )
-
-        inputs = self.processor(
-            text=[text_prompt],
-            images=[image],
-            padding=True,
-            return_tensors="pt",
-        )
-
-        device = self.device or "cpu"
-        inputs = {k: v.to(device) for k, v in inputs.items()}
-
-        with torch.no_grad():
-            output_ids = self.model.generate(
-                **inputs,
-                max_new_tokens=32,
-                do_sample=False,
-            )
-
-        output_text = self.processor.batch_decode(
-            output_ids[:, inputs["input_ids"].shape[1]:],
-            skip_special_tokens=True,
-            clean_up_tokenization_spaces=True,
-        )[0].strip()
-
-        return output_text
