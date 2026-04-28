@@ -1,0 +1,45 @@
+{
+  "vision_config_path": "vision_config.json",
+  "text_config_path": "text_config.json",
+  "transcript_config_path": "transcript_config.json",
+  "rag_config_path": "rag_config.json",
+  "vision": {
+    "roi_left": 500,
+    "roi_top": 500,
+    "roi_width": 100,
+    "roi_height": 100,
+    "save_screenshot": false,
+    "screenshot_path": "screenshot.png",
+    "prompt_template": "Read the text exactly as shown in the image. The text is expected to look like {expected_format}. Return only the text you see. Do not return JSON. Do not explain anything.",
+    "expected_format": "X:51 Y:-697"
+  },
+  "text": {
+    "prompt_template": "Current map: {selected_map}\nUser query: {user_text}"
+  },
+  "transcript": {
+    "directory": "hermes_transcripts",
+    "filename_prefix": "transcript",
+    "encoding": "utf-8"
+  },
+  "rag": null,
+  "metrics": {
+    "enabled": false,
+    "output_path": "hermes_metrics.jsonl"
+  },
+  "pumps": [
+    {
+      "name": "text_pump",
+      "model_name": "google/gemma-4-E2B-it",
+      "device": "cuda",
+      "capabilities": [
+        "text"
+      ],
+      "max_new_tokens": 256,
+      "do_sample": true,
+      "text_uses_processor": false
+    }
+  ],
+  "pipeline_subscriptions": {
+    "text": "text_pump"
+  }
+}
