@@ -19,6 +19,8 @@ from typing import Any, Optional
 
 import torch
 from transformers import AutoModelForCausalLM, AutoProcessor, AutoTokenizer, PreTrainedTokenizerBase, ProcessorMixin, TextIteratorStreamer
+# turboquant shit
+from turboquant import TurboQuantCache
 
 from core.config import ModelPumpConfig
 from core.metrics import InferenceMetrics, MetricsCollector
@@ -250,6 +252,13 @@ class ModelPump:
             "streamer": job.streamer,
         }
 
+        # TurboQuant (per-request cache)
+        if getattr(self.config, "use_turboquant", False):
+            tq_cache = TurboQuantCache(
+                bits=getattr(self.config, "turboquant_bits", 4)
+            )
+            generation_kwargs["past_key_values"] = tq_cache
+
         with torch.no_grad():
             output_ids = self._model.generate(**generation_kwargs)
 
@@ -271,7 +280,7 @@ class ModelPump:
         ))
 
     def _process_vision_job(self, job: _PumpJob, start_time: float) -> None:
-        assert self._processor is not None # yet another other Pylance satisfaction assertion
+        assert self._processor is not None  # yet another Pylance satisfaction assertion
 
         conversation = [
             {
@@ -287,6 +296,7 @@ class ModelPump:
             tokenize=False,
             add_generation_prompt=True,
         )
+
         # yet another Pylance satisfaction assertion
         assert self._processor is not None
 
@@ -299,12 +309,21 @@ class ModelPump:
         inputs = {k: v.to(self.config.device) for k, v in inputs.items()}
         prompt_tokens = inputs["input_ids"].shape[1]
 
-        with torch.no_grad():
-            output_ids = self._model.generate(
-                **inputs,
-                max_new_tokens=self.config.max_new_tokens,
-                do_sample=self.config.do_sample,
+        generation_kwargs = {
+            **inputs,
+            "max_new_tokens": self.config.max_new_tokens,
+            "do_sample": self.config.do_sample,
+        }
+
+        # TurboQuant (per-request cache)
+        if getattr(self.config, "use_turboquant", False):
+            tq_cache = TurboQuantCache(
+                bits=getattr(self.config, "turboquant_bits", 4)
             )
+            generation_kwargs["past_key_values"] = tq_cache
+
+        with torch.no_grad():
+            output_ids = self._model.generate(**generation_kwargs)
 
         output_text = self._processor.batch_decode(
             output_ids[:, prompt_tokens:],
@@ -329,7 +348,7 @@ class ModelPump:
             end_time=end_time,
         ))
 
-        assert job.result_event is not None # PYLAAAAAAANCCCCCEEEEEEEEEEEEEEE
+        assert job.result_event is not None  # PYLAAAAAAANCCCCCEEEEEEEEEEEEEEE
 
         job.result_holder.append(output_text)
         job.result_event.set()
@@ -362,11 +381,14 @@ class ModelPump:
         use_half = "cuda" in device
 
         print(f"[ModelPump:{config.name}] Loading model '{config.model_name}' on {device}...")
+
+    
         model = AutoModelForCausalLM.from_pretrained(
             config.model_name,
             torch_dtype=torch.float16 if use_half else torch.float32,
             device_map="auto" if use_half else None,
         )
+
         if not use_half:
             model.to(device)    # type: ignore
                                 # ^^^ yet ANOTHER unsatisfiable pylance thing

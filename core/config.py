@@ -250,6 +250,8 @@ class ModelPumpConfig(BaseModel):
         max_new_tokens: int - token generation limit.
         do_sample: bool - whether sampling is enabled.
         text_uses_processor: bool - whether text jobs use processor.
+        use_turboquant: bool - whether to use TurboQuant for this pump.
+        turboquant_bits: int - quantization bits for TurboQuant (if enabled).
     """
 
     name: str
@@ -259,6 +261,9 @@ class ModelPumpConfig(BaseModel):
     max_new_tokens: int = 1000
     do_sample: bool = False
     text_uses_processor: bool = False
+    # TurboQUANNTTT
+    use_turboquant: bool = True
+    turboquant_bits: int = 2
 
 # endregion ModelPumpConfig
 
