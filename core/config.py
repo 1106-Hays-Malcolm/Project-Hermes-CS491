@@ -3,6 +3,7 @@ import os
 from importlib import import_module
 from typing import Any
 
+from pydantic import BaseModel
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 MASTER_CONFIG_PATH = "core_config.json"
@@ -17,7 +18,9 @@ class VisionConfig(BaseSettings):
         roi_width: int - width of the capture region.
         roi_height: int - height of the capture region.
         save_screenshot: bool - whether to save each captured image.
-        screenshot_path: str - where to save the screenshot if enabled.
+        screenshot_path: str - output path for saved screenshots.
+        prompt_template: str - prompt template for vision inference.
+        expected_format: str - example expected OCR output format.
     """
 
     model_config = SettingsConfigDict(
@@ -34,8 +37,22 @@ class VisionConfig(BaseSettings):
     save_screenshot: bool = False
     screenshot_path: str = "screenshot.png"
 
+    prompt_template: str = (
+        "Read the text exactly as shown in the image. "
+        "The text is expected to look like {expected_format}. "
+        "Return only the text you see. "
+        "Do not return JSON. "
+        "Do not explain anything."
+    )
+
+    expected_format: str = "X:51 Y:-697"
+
     @classmethod
-    def load(cls, path: str = "vision_config.json", _data: dict = {}) -> "VisionConfig":
+    def load(
+        cls,
+        path: str = "vision_config.json",
+        _data: dict = {},
+    ) -> "VisionConfig":
         """Loads a VisionConfig instance from JSON or provided data.
 
         Args:
@@ -47,12 +64,14 @@ class VisionConfig(BaseSettings):
         """
         if _data:
             return cls(**_data)
+
         if not os.path.exists(path):
             return cls()
+
         with open(path, encoding="utf-8") as f:
             return cls(**json.load(f))
 
-    def save(self, path: str = "vision_config.json"):
+    def save(self, path: str = "vision_config.json") -> None:
         """Saves the vision config to a JSON file.
 
         Args:
@@ -61,14 +80,13 @@ class VisionConfig(BaseSettings):
         _save(self, path)
 
 
-
 class TextConfig(BaseSettings):
-    """Configuration for the text model pipeline.
+    """Configuration for the text pipeline.
 
     Attributes:
-        model_name: str - text model identifier or local path.
-        max_new_tokens: int - generation token limit.
-        do_sample: bool - whether to sample during generation.
+        prompt_template: str - prompt template for text inference.
+                          Available variables:
+                          {user_text}, {selected_map}
     """
 
     model_config = SettingsConfigDict(
@@ -78,12 +96,17 @@ class TextConfig(BaseSettings):
         frozen=False,
     )
 
-    model_name: str = "mistralai/Mistral-7B-Instruct-v0.3"
-    max_new_tokens: int = 1000
-    do_sample: bool = False
+    prompt_template: str = (
+        "Current map: {selected_map}\n"
+        "User query: {user_text}"
+    )
 
     @classmethod
-    def load(cls, path: str = "text_config.json", _data: dict = {}) -> "TextConfig":
+    def load(
+        cls,
+        path: str = "text_config.json",
+        _data: dict = {},
+    ) -> "TextConfig":
         """Loads a TextConfig instance from JSON or provided data.
 
         Args:
@@ -95,12 +118,14 @@ class TextConfig(BaseSettings):
         """
         if _data:
             return cls(**_data)
+
         if not os.path.exists(path):
             return cls()
+
         with open(path, encoding="utf-8") as f:
             return cls(**json.load(f))
 
-    def save(self, path: str = "text_config.json"):
+    def save(self, path: str = "text_config.json") -> None:
         """Saves the text config to a JSON file.
 
         Args:
@@ -114,8 +139,8 @@ class TranscriptConfig(BaseSettings):
 
     Attributes:
         directory: str - folder where transcript files are stored.
-        filename_prefix: str - prefix for each transcript file.
-        encoding: str - file encoding for transcript files.
+        filename_prefix: str - prefix for transcript files.
+        encoding: str - output file encoding.
     """
 
     model_config = SettingsConfigDict(
@@ -130,7 +155,11 @@ class TranscriptConfig(BaseSettings):
     encoding: str = "utf-8"
 
     @classmethod
-    def load(cls, path: str = "transcript_config.json", _data: dict = {}) -> "TranscriptConfig":
+    def load(
+        cls,
+        path: str = "transcript_config.json",
+        _data: dict = {},
+    ) -> "TranscriptConfig":
         """Loads a TranscriptConfig instance from JSON or provided data.
 
         Args:
@@ -142,18 +171,54 @@ class TranscriptConfig(BaseSettings):
         """
         if _data:
             return cls(**_data)
+
         if not os.path.exists(path):
             return cls()
+
         with open(path, encoding="utf-8") as f:
             return cls(**json.load(f))
 
-    def save(self, path: str = "transcript_config.json"):
+    def save(self, path: str = "transcript_config.json") -> None:
         """Saves the transcript config to a JSON file.
 
         Args:
             path: Destination JSON file path.
         """
         _save(self, path)
+
+
+class ModelPumpConfig(BaseModel):
+    """Configuration for a single model pump.
+
+    Attributes:
+        name: str - unique pump identifier.
+        model_name: str - model path or HuggingFace identifier.
+        device: str - torch device string.
+        capabilities: list[str] - supported capability types.
+        max_new_tokens: int - token generation limit.
+        do_sample: bool - whether sampling is enabled.
+        text_uses_processor: bool - whether text jobs use processor.
+    """
+
+    name: str
+    model_name: str
+    device: str = "cpu"
+    capabilities: list[str] = ["text"]
+    max_new_tokens: int = 1000
+    do_sample: bool = False
+    text_uses_processor: bool = False
+
+
+class MetricsConfig(BaseModel):
+    """Configuration for inference metrics collection.
+
+    Attributes:
+        enabled: bool - whether metrics are collected.
+        output_path: str - output JSONL metrics file path.
+    """
+
+    enabled: bool = False
+    output_path: str = "hermes_metrics.jsonl"
 
 
 class CoreConfig(BaseSettings):
@@ -163,9 +228,14 @@ class CoreConfig(BaseSettings):
         vision: VisionConfig - vision subsystem config.
         text: TextConfig - text subsystem config.
         transcript: TranscriptConfig - transcript subsystem config.
+        rag: Any - optional RAG configuration.
+        metrics: MetricsConfig - metrics subsystem config.
+        pumps: list[ModelPumpConfig] - available model pumps.
+        pipeline_subscriptions: dict[str, str] - pipeline to pump map.
         vision_config_path: str - standalone vision config file path.
         text_config_path: str - standalone text config file path.
         transcript_config_path: str - standalone transcript config file path.
+        rag_config_path: str - standalone RAG config file path.
     """
 
     model_config = SettingsConfigDict(
@@ -177,6 +247,11 @@ class CoreConfig(BaseSettings):
     text: TextConfig = TextConfig()
     transcript: TranscriptConfig = TranscriptConfig()
     rag: Any = None
+    metrics: MetricsConfig = MetricsConfig()
+
+    pumps: list[ModelPumpConfig] = []
+    pipeline_subscriptions: dict[str, str] = {}
+
     vision_config_path: str = "vision_config.json"
     text_config_path: str = "text_config.json"
     transcript_config_path: str = "transcript_config.json"
@@ -184,13 +259,13 @@ class CoreConfig(BaseSettings):
 
     @classmethod
     def _load_rag_config(cls, data: dict) -> Any:
-        """Loads the RAG config section if the RAG module is available.
+        """Loads the RAG config section if available.
 
         Args:
-            data: The RAG section from a master config file.
+            data: RAG section from the master config.
 
         Returns:
-            Any: The instantiated RAGConfig object or the raw data.
+            Any: Loaded RAGConfig instance or raw data.
         """
         if not data:
             return None
@@ -209,38 +284,78 @@ class CoreConfig(BaseSettings):
 
     @classmethod
     def load(cls, path: str = MASTER_CONFIG_PATH) -> "CoreConfig":
-        """Loads CoreConfig from a master JSON file.
+        """Loads CoreConfig from the master JSON file.
 
         Args:
-            path: Path to the master config JSON file.
+            path: Path to the master config file.
 
         Returns:
-            CoreConfig: The loaded root configuration.
+            CoreConfig: Fully loaded root configuration.
         """
         default = cls()
+
         if not os.path.exists(path):
             return default
+
         with open(path, encoding="utf-8") as f:
             data = json.load(f)
 
-        vision = VisionConfig.load(path=default.vision_config_path, _data=data.get("vision", {}))
-        text = TextConfig.load(path=default.text_config_path, _data=data.get("text", {}))
-        transcript = TranscriptConfig.load(path=default.transcript_config_path, _data=data.get("transcript", {}))
+        vision = VisionConfig.load(
+            path=default.vision_config_path,
+            _data=data.get("vision", {}),
+        )
+
+        text = TextConfig.load(
+            path=default.text_config_path,
+            _data=data.get("text", {}),
+        )
+
+        transcript = TranscriptConfig.load(
+            path=default.transcript_config_path,
+            _data=data.get("transcript", {}),
+        )
+
         rag = cls._load_rag_config(data.get("rag", {}))
+        metrics = MetricsConfig(**data.get("metrics", {}))
+
+        pumps = [
+            ModelPumpConfig(**pump)
+            for pump in data.get("pumps", [])
+        ]
+
+        pipeline_subscriptions = data.get(
+            "pipeline_subscriptions",
+            {},
+        )
 
         return cls(
             vision=vision,
             text=text,
             transcript=transcript,
             rag=rag,
-            vision_config_path=data.get("vision_config_path", default.vision_config_path),
-            text_config_path=data.get("text_config_path", default.text_config_path),
-            transcript_config_path=data.get("transcript_config_path", default.transcript_config_path),
-            rag_config_path=data.get("rag_config_path", default.rag_config_path),
+            metrics=metrics,
+            pumps=pumps,
+            pipeline_subscriptions=pipeline_subscriptions,
+            vision_config_path=data.get(
+                "vision_config_path",
+                default.vision_config_path,
+            ),
+            text_config_path=data.get(
+                "text_config_path",
+                default.text_config_path,
+            ),
+            transcript_config_path=data.get(
+                "transcript_config_path",
+                default.transcript_config_path,
+            ),
+            rag_config_path=data.get(
+                "rag_config_path",
+                default.rag_config_path,
+            ),
         )
 
-    def save(self, path: str = MASTER_CONFIG_PATH):
-        """Saves the full resolved core configuration to a master JSON file.
+    def save(self, path: str = MASTER_CONFIG_PATH) -> None:
+        """Saves the full resolved core configuration.
 
         Args:
             path: Destination master JSON file path.
@@ -253,14 +368,24 @@ class CoreConfig(BaseSettings):
             "vision": self.vision.model_dump(mode="json"),
             "text": self.text.model_dump(mode="json"),
             "transcript": self.transcript.model_dump(mode="json"),
-            "rag": self.rag.model_dump(mode="json") if hasattr(self.rag, "model_dump") else self.rag,
+            "rag": (
+                self.rag.model_dump(mode="json")
+                if hasattr(self.rag, "model_dump")
+                else self.rag
+            ),
+            "metrics": self.metrics.model_dump(mode="json"),
+            "pumps": [
+                pump.model_dump(mode="json")
+                for pump in self.pumps
+            ],
+            "pipeline_subscriptions": self.pipeline_subscriptions,
         }
+
         with open(path, "w", encoding="utf-8") as f:
             json.dump(data, f, indent=2)
 
 
-
-def _save(config: BaseSettings, path: str):
+def _save(config: BaseSettings, path: str) -> None:
     """Writes a config object's JSON representation to disk.
 
     Args:
@@ -268,4 +393,8 @@ def _save(config: BaseSettings, path: str):
         path: Output JSON file path.
     """
     with open(path, "w", encoding="utf-8") as f:
-        json.dump(config.model_dump(mode="json"), f, indent=2)
+        json.dump(
+            config.model_dump(mode="json"),
+            f,
+            indent=2,
+        )
