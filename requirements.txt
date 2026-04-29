@@ -13,3 +13,5 @@ transformers==5.6.2
 bitsandbytes @ https://github.com/bitsandbytes-foundation/bitsandbytes/releases/download/continuous-release_main/bitsandbytes-1.33.7.preview-py3-none-win_amd64.whl
 turboquant==0.2.0 
 accelerate==1.6.0
+
+llama-cpp-python==0.3.21

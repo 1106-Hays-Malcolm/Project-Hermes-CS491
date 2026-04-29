@@ -14,4 +14,7 @@ bitsandbytes @ https://github.com/bitsandbytes-foundation/bitsandbytes/releases/
 turboquant==0.2.0 
 accelerate==1.6.0
 
+--extra-index-url https://abetlen.github.io/llama-cpp-python/whl/cu121
+llama-cpp-python==0.3.21
+
 -r RAG/requirements-cuda.txt

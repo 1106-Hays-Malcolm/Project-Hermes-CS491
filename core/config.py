@@ -1,7 +1,7 @@
 import json
 import os
 from importlib import import_module
-from typing import Any
+from typing import Any, Optional
 
 from pydantic import BaseModel
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -255,7 +255,18 @@ class ModelPumpConfig(BaseModel):
         text_uses_processor: bool - whether text jobs use processor.
         use_turboquant: bool - whether to use TurboQuant for this pump.
         turboquant_bits: int - quantization bits for TurboQuant (if enabled).
+
+        # --- transformers backend ---
+        load_in_4bit: bool - enable 4-bit bnb quantization.
+        load_in_8bit: bool - enable 8-bit bnb quantization.
+
+        # --- llamacpp backend ---
+        model_path: str - local path to .gguf file.
+        clip_model_path: str - local path to clip .gguf for vision (llava only).
+        n_gpu_layers: int - layers to offload to GPU; -1 = all.
+        n_ctx: int - context window size (defaults to max_new_tokens if 0).
     """
+    backend: str = "transformers"  # "transformers" or "llamacpp"
 
     name: str
     model_name: str
@@ -269,9 +280,16 @@ class ModelPumpConfig(BaseModel):
     use_turboquant: bool = False
     turboquant_bits: int = 4
 
-    # Model Quantization
+    # --- transformers backend ---
     load_in_4bit: bool = True
     load_in_8bit: bool = False
+
+    # --- llamacpp backend ---
+    model_path: Optional[str] = None          # local .gguf path; if None, uses model_name via HF
+    gguf_filename: Optional[str] = "*Q4_K_M.gguf"  # glob to select quant tier from HF repo
+    clip_model_path: Optional[str] = None
+    n_gpu_layers: int = -1
+    n_ctx: int = 0
 
 # endregion ModelPumpConfig
 

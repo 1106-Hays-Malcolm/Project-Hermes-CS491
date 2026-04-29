@@ -10,7 +10,7 @@
     "roi_height": 50,
     "save_screenshot": true,
     "screenshot_path": "screenshot.png",
-    "prompt_template": "Read the coordinates exactly as shown in the image. The text is expected to look like {expected_format} where # are replaced with the numbers/coordinates you see. Return only the text you see. Do not return JSON. Do not explain anything. Ensure the values you see are accurate to the what you see in the image. If you do NOT see any coordinate values, simply return 'NO VALUES FOUND'. ",
+    "prompt_template": "Read the coordinates exactly as shown in the image. The text is expected to look like {expected_format} where # are replaced with the numbers/coordinates you see. Return only the text you see. Do not return JSON. Do not explain anything. Ensuare the values you see are accurate to the what you see in the image. If you do NOT see any coordinate values, simply return 'NO VALUES FOUND'. ",
     "expected_format": "X:# / Y:#",
     "capture_interval_seconds": 3.0
   },
@@ -29,8 +29,9 @@
   },
   "pumps": [
     {
+      "backend": "llamacpp",
       "name": "gemma_pump",
-      "model_name": "google/gemma-4-E2B-it",
+      "model_name": "unsloth/gemma-4-E2B-it-GGUF",
       "device": "cuda",
       "capabilities": [
         "text",
@@ -42,7 +43,12 @@
       "use_turboquant": true,
       "turboquant_bits": 4,
       "load_in_4bit": true,
-      "load_in_8bit": false
+      "load_in_8bit": false,
+      "model_path": null,
+      "gguf_filename": "*Q4_0.gguf",
+      "clip_model_path": null,
+      "n_gpu_layers": -1,
+      "n_ctx": 0
     }
   ],
   "pipeline_subscriptions": {

@@ -5,7 +5,7 @@ from PIL import Image
 from mss import mss
 
 from core.config import VisionConfig
-from core.pump import ModelPump
+from core.pump import AbstractModelPump, ModelPump
 
 
 @dataclass
@@ -24,7 +24,7 @@ class VisionPipeline:
     """
 
     config: VisionConfig
-    pump: ModelPump
+    pump: AbstractModelPump
 
     def capture_region(self) -> Image.Image:
         """Captures a screen region defined in the configuration.

@@ -3,7 +3,7 @@ from typing import Optional
 from RAG.rag.rag_api import RAGAPI
 
 from core.config import TextConfig
-from core.pump import ModelPump, _TimedIteratorStreamer
+from core.pump import AbstractModelPump, ModelPump, _TimedIteratorStreamer
 
 
 @dataclass
@@ -17,7 +17,7 @@ class TextPipeline:
     """
 
     config: TextConfig
-    pump: ModelPump
+    pump: AbstractModelPump
     rag: Optional[RAGAPI] = field(default=None)  # RAGAPI, typed as object to avoid hard import dep
 
     def _build_rag_context(self, user_text: str) -> str:

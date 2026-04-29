@@ -118,8 +118,8 @@ def run_vision_loop() -> None:
                     print("[VisionLoop] Skipping (0,0)")
                     continue
                 # for now angle from {0,0} to {x,y}
-                web_app.compass_degrees = ((180 + (180 / 3.14159) * -1 * (3.14159 / 2 - (3.14159 + (3.14159 / 2) - (3.14159 / 2 + (3.14159 / 2) * (y / (abs(x) + abs(y))) if y != 0 else 0) + (3.14159 / 2) * (x / (abs(x) + abs(y))) if x != 0 else 0)))) % 360
-                # web_app.latest_coords = coords # TODO: add this junk later
+                import math
+                web_app.compass_degrees = (math.degrees(math.atan2(x, y)) + 360) % 360                # web_app.latest_coords = coords # TODO: add this junk later
             except Exception as e:
                 print(f"[VisionLoop] Error: {e}")
         time.sleep(core_api.config.vision.capture_interval_seconds)

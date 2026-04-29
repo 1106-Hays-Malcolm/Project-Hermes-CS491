@@ -3,11 +3,13 @@ from typing import Optional
 
 from core.config import CoreConfig
 from core.metrics import MetricsCollector
-from core.pump import ModelPump, _TimedIteratorStreamer, PumpCapability
+from core.pump import PumpCapability, AbstractModelPump, create_pump
 from core.session import SessionState
 from core.pipelines.text import TextPipeline
 from core.transcript import TranscriptManager
 from core.pipelines.vision import VisionPipeline
+
+from typing import Any
 
 from RAG.rag.rag_api import RAGAPI
 
@@ -31,7 +33,7 @@ class CoreAPI:
 
     config: CoreConfig
     session: SessionState
-    pumps: dict[str, ModelPump]
+    pumps: dict[str, AbstractModelPump]
     text_pipeline: Optional[TextPipeline]
     vision_pipeline: Optional[VisionPipeline]
     transcript_manager: TranscriptManager
@@ -72,8 +74,8 @@ class CoreAPI:
                 output_path=config.metrics.output_path,
             )
 
-        pumps: dict[str, ModelPump] = {
-            p.name: ModelPump.create(p, metrics_collector)
+        pumps: dict[str, AbstractModelPump] = {
+            p.name: create_pump(p, metrics_collector)
             for p in config.pumps
         }
 
@@ -207,7 +209,7 @@ class CoreAPI:
         self,
         user_text: str,
         selected_map: Optional[str] = None,
-    ) -> _TimedIteratorStreamer:
+    ) -> Any:
         """Submits a text query and returns a streaming response.
 
         Args:
@@ -215,7 +217,7 @@ class CoreAPI:
             selected_map: Optional map context override.
 
         Returns:
-            _TimedIteratorStreamer: Iterable token stream.
+            Any: Iterable token stream.
 
         Raises:
             RuntimeError: If no text pipeline is configured.
