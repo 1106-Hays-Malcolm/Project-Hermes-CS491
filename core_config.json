@@ -4,15 +4,15 @@
   "transcript_config_path": "transcript_config.json",
   "rag_config_path": "rag_config.json",
   "vision": {
-    "roi_left": 500,
-    "roi_top": 500,
-    "roi_width": 100,
-    "roi_height": 100,
+    "roi_left": 0,
+    "roi_top": 0,
+    "roi_width": 2560,
+    "roi_height": 1440,
     "save_screenshot": true,
     "screenshot_path": "screenshot.png",
     "prompt_template": "Describe the image in detail.",
     "expected_format": "X:123 Y:456",
-    "capture_interval_seconds": 3.0
+    "capture_interval_seconds": 8.0
   },
   "text": {
     "prompt_template": "{rag_context}\nCurrent map: {selected_map}\nUser query: {user_text}"
