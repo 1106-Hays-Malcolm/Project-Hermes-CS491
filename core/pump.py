@@ -39,6 +39,7 @@ import torch
 from transformers import (
     AutoModelForCausalLM,
     AutoModelForImageTextToText,
+    AutoModelForMultimodalLM,
     AutoProcessor,
     AutoTokenizer,
     BitsAndBytesConfig,
@@ -72,7 +73,6 @@ if not hasattr(np, "trapz"):
     np.trapz = trapz  # type: ignore
 
 # endregion Bootleg FIXES*
-
 
 # region Transformers Backend
 
@@ -352,7 +352,9 @@ class ModelPump:
         ]
         text_prompt = self._processor.apply_chat_template(
             conversation,
-            tokenize=False,
+            tokenize=True,
+            return_dict=True,
+            return_tensors="pt",
             add_generation_prompt=True,
         )
 
@@ -469,16 +471,16 @@ class ModelPump:
         if quantization_config is not None:
             load_kwargs["quantization_config"] = quantization_config
 
-        # Vision-capable pumps apparently need AutoModelForImageTextToText so the vision tower is actually loaded?
+        # Vision-capable pumps apparently need AutoModelForMultimodalLM so the vision tower is actually loaded?
         if PumpCapability.VISION in capabilities:
-            print(f"[ModelPump:{config.name}] Vision capability detected — using AutoModelForImageTextToText.")
+            print(f"[ModelPump:{config.name}] Vision capability detected — using AutoModelForMultimodalLM.")
             try:
-                model = AutoModelForImageTextToText.from_pretrained(
+                model = AutoModelForMultimodalLM.from_pretrained(
                     config.model_name,
                     **load_kwargs,
                 )
             except Exception as e:
-                print(f"[ModelPump:{config.name}] AutoModelForImageTextToText failed ({e}), falling back to AutoModelForCausalLM.")
+                print(f"[ModelPump:{config.name}] AutoModelForMultimodalLM failed ({e}), falling back to AutoModelForCausalLM.")
                 model = AutoModelForCausalLM.from_pretrained(
                     config.model_name,
                     **load_kwargs,
@@ -533,24 +535,28 @@ class ModelPump:
 
 # endregion Transformers Backend
 
-
 # region LlamaCpp Backend
 
 class LlamaCppModelPump:
     """Owns a single GGUF model loaded via llama-cpp-python.
     Runs inference jobs on a dedicated thread, same queue pattern as ModelPump.
 
-    Unlike the transformers backend, llama-cpp quantizes everything including
-    embeddings and lm_head, so Q4_0/Q4_K_M etc. actually hit their advertised
-    memory footprints. Vision support requires a llava-compatible GGUF +
-    clip model path in config.
+    Vision support uses a llama-cpp chat handler (LlavaChatHandler or
+    Llava15ChatHandler) rather than passing clip_model_path directly to Llama,
+    which is not a supported kwarg. The chat handler owns the CLIP sidecar and
+    is responsible for image embedding injection before generation.
 
     Use LlamaCppModelPump.create() to construct from a ModelPumpConfig.
     Config differences from ModelPump:
-        model_path:      Local path to the .gguf file (required).
-        clip_model_path: Local path to the clip .gguf for vision (optional).
-        n_ctx:           Context length (defaults to max_new_tokens).
-        n_gpu_layers:    Layers to offload to GPU; -1 = all (default).
+        model_path:       Local path to the .gguf file (optional; falls back to
+                          Llama.from_pretrained with gguf_filename glob).
+        clip_model_path:  Local path to the clip .gguf for vision (optional;
+                          auto-downloaded from HF if omitted).
+        clip_gguf_filename: Filename glob used when auto-downloading the clip
+                          sidecar (default "mmproj-BF16.gguf").
+        n_ctx:            Context length (defaults to max_new_tokens * 4 for
+                          vision, max_new_tokens for text-only).
+        n_gpu_layers:     Layers to offload to GPU; -1 = all (default).
     """
 
     def __init__(
@@ -576,7 +582,6 @@ class LlamaCppModelPump:
 
     @property
     def capabilities(self) -> frozenset[PumpCapability]:
-        """Returns the set of capabilities this pump supports."""
         return frozenset(self._capabilities)
 
     def assert_capability(self, capability: PumpCapability) -> None:
@@ -597,10 +602,6 @@ class LlamaCppModelPump:
     ) -> Iterator[str]:
         """Enqueues a text generation job and returns a generator immediately.
 
-        Unlike the transformers backend this yields plain strings rather than
-        a TextIteratorStreamer, but the caller interface is the same — just
-        iterate the result. First-token timing is recorded internally.
-
         Args:
             prompt:        Fully-built prompt string.
             pipeline_type: Label written to metrics (default "text").
@@ -613,28 +614,21 @@ class LlamaCppModelPump:
         """
         self.assert_capability(PumpCapability.TEXT)
 
-        # Use a queue to bridge the worker thread and the caller's iterator.
-        # Sentinel None signals end of stream; Exception instances are re-raised.
         token_queue: Queue = Queue()
+        result_holder: list = [token_queue]  # smuggle queue to worker before job runs
 
-        event = threading.Event()
-        result_holder: list = []
         job = _PumpJob(
             capability=PumpCapability.TEXT,
             pipeline_type=pipeline_type,
             prompt=prompt,
             image=None,
-            streamer=None,          # llama-cpp doesn't use TextIteratorStreamer
-            result_event=event,
+            streamer=None,
+            result_event=threading.Event(),
             result_holder=result_holder,
             submit_time=time.monotonic(),
         )
-        # Smuggle the token queue through result_holder[0] before the job runs.
-        # Worker checks for Queue type and streams into it rather than blocking.
-        result_holder.append(token_queue)
         self._queue.put(job)
 
-        # Yield from the token queue until the worker signals done
         while True:
             token = token_queue.get()
             if token is None:
@@ -648,7 +642,9 @@ class LlamaCppModelPump:
     ) -> str:
         """Enqueues a vision job and blocks until the result is ready.
 
-        Requires a llava-compatible GGUF with clip_model_path set in config.
+        The image is encoded as a PNG data URI and passed to the chat handler
+        via the OpenAI-style image_url content block, which is the interface
+        LlavaChatHandler expects.
 
         Args:
             image:         PIL Image.
@@ -693,7 +689,6 @@ class LlamaCppModelPump:
     # region Internal Worker Logic
 
     def _worker(self) -> None:
-        """Main loop for the pump worker thread. Processes jobs until shutdown."""
         while True:
             job = self._queue.get()
             if job is None:
@@ -718,7 +713,6 @@ class LlamaCppModelPump:
             self._process_vision_job(job, start_time)
 
     def _process_text_job(self, job: _PumpJob, start_time: float) -> None:
-        # result_holder[0] is the token queue smuggled in by submit_text_streaming
         token_queue: Queue = job.result_holder[0]
 
         first_token_time: Optional[float] = None
@@ -726,8 +720,6 @@ class LlamaCppModelPump:
         output_tokens: int = 0
 
         try:
-            # llama-cpp handles chat templating internally when using
-            # create_chat_completion — no manual template application needed
             stream = self._llm.create_chat_completion(
                 messages=[{"role": "user", "content": job.prompt}],
                 max_tokens=self.config.max_new_tokens,
@@ -745,15 +737,14 @@ class LlamaCppModelPump:
                     token_queue.put(token_text)
                     output_tokens += 1
 
-                # llama-cpp surfaces usage in the final chunk
                 usage = chunk.get("usage")
                 if usage:
                     prompt_tokens = usage.get("prompt_tokens", prompt_tokens)
 
         except Exception as e:
-            token_queue.put(e)     # caller's iterator will re-raise
+            token_queue.put(e)
         finally:
-            token_queue.put(None)  # sentinel — always signal end even on error
+            token_queue.put(None)  # always signal end, even on error
 
         end_time = time.monotonic()
 
@@ -775,12 +766,14 @@ class LlamaCppModelPump:
         import base64
         import io
 
-        assert job.result_event is not None  # PYLAAAAAAANCCCCCEEEEEEEEEEEEEEE
+        assert job.result_event is not None
 
         try:
-            # llama-cpp vision expects base64-encoded image data URIs
+            # Encode the PIL image as a PNG data URI.
+            # LlavaChatHandler expects an OpenAI-style image_url content block
+            # with a data URI string — not raw bytes, not a dict with a "data" key.
             buffer = io.BytesIO()
-            job.image.save(buffer, format="PNG") # type: ignore
+            job.image.save(buffer, format="PNG")  # type: ignore
             b64 = base64.b64encode(buffer.getvalue()).decode("utf-8")
             data_uri = f"data:image/png;base64,{b64}"
 
@@ -789,8 +782,14 @@ class LlamaCppModelPump:
                     {
                         "role": "user",
                         "content": [
-                            {"type": "image_url", "image_url": {"url": data_uri}},
-                            {"type": "text", "text": job.prompt},
+                            {
+                                "type": "image_url",
+                                "image_url": {"url": data_uri},
+                            },
+                            {
+                                "type": "text",
+                                "text": job.prompt,
+                            },
                         ],
                     }
                 ],
@@ -818,7 +817,7 @@ class LlamaCppModelPump:
             prompt_tokens=prompt_tokens,
             output_tokens=output_tokens,
             submit_time=job.submit_time,
-            start_time=time.monotonic(),  # start_time arg unused for vision, reuse end approx
+            start_time=start_time,  # fixed: was re-calling time.monotonic() here, losing the real start
             first_token_time=None,
             end_time=end_time,
         ))
@@ -838,19 +837,21 @@ class LlamaCppModelPump:
     ) -> "LlamaCppModelPump":
         """Loads the GGUF model and constructs a running LlamaCppModelPump.
 
+        For vision-capable pumps, a LlavaChatHandler is constructed with the
+        CLIP sidecar and passed to Llama via chat_handler. This is the only
+        supported way to do vision with llama-cpp-python — passing clip_model_path
+        directly to Llama() is not a valid kwarg and will silently do nothing
+        (or raise, depending on version).
+
         Expects config to have:
-            model_path:      Path to the .gguf file.
-            clip_model_path: Path to clip .gguf for vision (optional).
-            n_gpu_layers:    GPU layer offload count; -1 = all (optional, default -1).
-            n_ctx:           Context window size (optional, defaults to max_new_tokens).
-
-        Args:
-            config:            Pump configuration.
-            metrics_collector: Shared collector instance; a disabled one is
-                               created if not provided.
-
-        Returns:
-            LlamaCppModelPump: A running pump with its worker thread started.
+            model_path:        Path to the .gguf file (optional; falls back to
+                               Llama.from_pretrained with gguf_filename glob).
+            clip_model_path:   Path to clip .gguf for vision (optional;
+                               auto-downloaded from HF if omitted).
+            clip_gguf_filename: Filename for auto-download (default "mmproj-BF16.gguf").
+            n_gpu_layers:      GPU layer offload count; -1 = all (default).
+            n_ctx:             Context window size (optional, defaults to
+                               max_new_tokens * 4 for vision, max_new_tokens otherwise).
         """
         try:
             from llama_cpp import Llama
@@ -865,40 +866,52 @@ class LlamaCppModelPump:
 
         capabilities = {PumpCapability(c) for c in config.capabilities}
         model_path = getattr(config, "model_path", None)
+        n_gpu_layers = getattr(config, "n_gpu_layers", -1)
 
-        # if not model_path:
-        #     raise ValueError(
-        #         f"[LlamaCppModelPump:{config.name}] config.model_path is required for the llama-cpp backend."
-        #     )
-
-        n_gpu_layers = getattr(config, "n_gpu_layers", -1)  # -1 = offload everything
-        n_ctx = getattr(config, "n_ctx", config.max_new_tokens)
-        clip_model_path = getattr(config, "clip_model_path", None)
-
-        print(f"[LlamaCppModelPump:{config.name}] Loading GGUF '{model_path}' with {n_gpu_layers} GPU layers...")
-
-        llm_kwargs = {
+        llm_kwargs: dict[str, Any] = {
             "n_gpu_layers": n_gpu_layers,
-            "n_ctx": n_ctx,
             "verbose": False,
         }
 
-        # Vision requires a clip model sidecar — llava architecture only
         if PumpCapability.VISION in capabilities:
+            # Vision requires a chat handler that owns the CLIP sidecar.
+            # n_ctx needs to be large enough to hold image embeddings (which are
+            # large) plus the text prompt; the default max_new_tokens alone is
+            # usually too small and will cause silent truncation.
+            llm_kwargs["n_ctx"] = getattr(
+                config, "n_ctx", config.max_new_tokens * 4
+            )
+
             clip_model_path = getattr(config, "clip_model_path", None)
-            clip_filename = getattr(config, "clip_gguf_filename", "mmproj-F16.gguf")
-            
             if not clip_model_path:
-                # pull clip sidecar from same repo as the main model
                 from huggingface_hub import hf_hub_download
+                clip_filename = getattr(config, "clip_gguf_filename", "mmproj-BF16.gguf")
                 clip_model_path = hf_hub_download(
                     repo_id=config.model_name,
                     filename=clip_filename,
                 )
-                print(f"[LlamaCppModelPump:{config.name}] Downloaded clip model to '{clip_model_path}'.")
-            
-            llm_kwargs["clip_model_path"] = clip_model_path
-            print(f"[LlamaCppModelPump:{config.name}] Vision capability detected — loading clip model '{clip_model_path}'.")
+                print(f"[LlamaCppModelPump:{config.name}] Downloaded clip sidecar to '{clip_model_path}'.")
+
+            try:
+                # Llava 1.6 / llava-next models
+                from llama_cpp.llama_chat_format import Llava16ChatHandler as _ChatHandler
+            except ImportError:
+                # Older llama-cpp-python builds only have the 1.5 handler
+                from llama_cpp.llama_chat_format import Llava15ChatHandler as _ChatHandler  # type: ignore
+
+            chat_handler = _ChatHandler(
+                clip_model_path=clip_model_path,
+                verbose=False,
+            )
+            llm_kwargs["chat_handler"] = chat_handler
+            print(
+                f"[LlamaCppModelPump:{config.name}] Vision capability detected — "
+                f"chat handler loaded with clip model '{clip_model_path}'."
+            )
+        else:
+            llm_kwargs["n_ctx"] = getattr(config, "n_ctx", config.max_new_tokens)
+
+        print(f"[LlamaCppModelPump:{config.name}] Loading GGUF '{model_path}' with {n_gpu_layers} GPU layers...")
 
         if model_path:
             llm = Llama(model_path=model_path, **llm_kwargs)
@@ -909,7 +922,7 @@ class LlamaCppModelPump:
                 filename=filename,
                 **llm_kwargs,
             )
-            
+
         print(f"[LlamaCppModelPump:{config.name}] Model loaded.")
 
         return cls(
@@ -922,7 +935,6 @@ class LlamaCppModelPump:
     # endregion Factory Methods
 
 # endregion LlamaCpp Backend
-
 
 # region Pump Factory
 

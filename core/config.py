@@ -287,6 +287,7 @@ class ModelPumpConfig(BaseModel):
     # --- llamacpp backend ---
     model_path: Optional[str] = None          # local .gguf path; if None, uses model_name via HF
     gguf_filename: Optional[str] = "*Q4_K_M.gguf"  # glob to select quant tier from HF repo
+    clip_gguf_filename: Optional[str] = "mmproj-BF16.gguf"  # glob for clip model in HF repo (llava only)
     clip_model_path: Optional[str] = None
     n_gpu_layers: int = -1
     n_ctx: int = 0

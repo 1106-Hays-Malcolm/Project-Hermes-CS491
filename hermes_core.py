@@ -99,12 +99,13 @@ def process_user_input(new_result: dict) -> None:
         question,
         "".join(full_response),
     )
+    #Read the X and Y coordinates you see in the image. Your output is expected to look like {expected_format} where # are replaced with the coordinate values you see. If you do NOT see any coordinate values, simply return 'NO VALUES FOUND'.
 
 def run_vision_loop() -> None:
     core_api.session.start_visual_loop()
     while True:
         if core_api.is_visual_loop_active():
-            try:
+            try:                                 # (420, 69)
                 coords = core_api.capture_coordinates()
                 print(f"[VisionLoop] Captured coordinates: {coords}")
                 # parse from X:51 Y:-697 to {51, -697}

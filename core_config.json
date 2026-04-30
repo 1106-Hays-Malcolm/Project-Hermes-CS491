@@ -6,12 +6,12 @@
   "vision": {
     "roi_left": 500,
     "roi_top": 500,
-    "roi_width": 50,
-    "roi_height": 50,
+    "roi_width": 100,
+    "roi_height": 100,
     "save_screenshot": true,
     "screenshot_path": "screenshot.png",
-    "prompt_template": "Read the coordinates exactly as shown in the image. The text is expected to look like {expected_format} where # are replaced with the numbers/coordinates you see. Return only the text you see. Do not return JSON. Do not explain anything. Ensuare the values you see are accurate to the what you see in the image. If you do NOT see any coordinate values, simply return 'NO VALUES FOUND'. ",
-    "expected_format": "X:# / Y:#",
+    "prompt_template": "Describe the image in detail.",
+    "expected_format": "X:123 Y:456",
     "capture_interval_seconds": 3.0
   },
   "text": {
@@ -37,7 +37,7 @@
         "text",
         "vision"
       ],
-      "max_new_tokens": 128,
+      "max_new_tokens": 512,
       "do_sample": true,
       "text_uses_processor": true,
       "use_turboquant": true,
@@ -45,7 +45,8 @@
       "load_in_4bit": true,
       "load_in_8bit": false,
       "model_path": null,
-      "gguf_filename": "*Q4_0.gguf",
+      "gguf_filename": "*Q4_K_M.gguf",
+      "clip_gguf_filename": "mmproj-BF16.gguf",
       "clip_model_path": null,
       "n_gpu_layers": -1,
       "n_ctx": 0
