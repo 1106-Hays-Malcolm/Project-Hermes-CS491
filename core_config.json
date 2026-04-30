@@ -6,8 +6,8 @@
   "vision": {
     "roi_left": 0,
     "roi_top": 0,
-    "roi_width": 2560,
-    "roi_height": 1440,
+    "roi_width": 1920,
+    "roi_height": 1080,
     "save_screenshot": true,
     "screenshot_path": "screenshot.png",
     "prompt_template": "Describe the image in detail.",
